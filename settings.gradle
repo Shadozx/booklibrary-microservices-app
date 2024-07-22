@@ -1,0 +1,7 @@
+
+include 'config-server'
+include 'gateway-server'
+include 'eureka-server'
+include ':services:book-service'
+include ':services:api'
+include ':services:author-service'
