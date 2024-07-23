@@ -29,11 +29,11 @@ public class GlobalExceptionHandler {
 //        return buildErrorResponse(e, HttpStatus.INTERNAL_SERVER_ERROR, request);
 //    }
 //
-//    @ExceptionHandler(EntityNotFoundException.class)
-//    public ResponseEntity<?> handleEntityNotFoundException(EntityNotFoundException e, WebRequest request) {
-//        return buildErrorResponse(e, HttpStatus.NOT_FOUND, request);
-//    }
-//
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<?> handleEntityNotFoundException(NotFoundException e, WebRequest request) {
+        return buildErrorResponse(e, HttpStatus.NOT_FOUND, request);
+    }
+
     @ExceptionHandler(NullEntityReferenceException.class)
     public ResponseEntity<?> handleEntityNotFoundException(NullEntityReferenceException e, WebRequest request) {
         return buildErrorResponse(e, HttpStatus.BAD_REQUEST, request);
