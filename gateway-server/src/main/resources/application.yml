@@ -15,7 +15,17 @@ spring:
         - id: book-service
           uri: lb://book-service
           predicates:
-            - Path=/api/v1/**
+            - Path=/api/books/**
+          filters:
+            - StripPrefix=1
+
+        - id: bookcatalog-service
+          uri: lb://bookcatalog-service
+          predicates:
+            - Path=/api/catalogs/**
+          filters:
+            - StripPrefix=1
+
         - id: author-service
           uri: lb://author-service
           predicates:
@@ -26,7 +36,7 @@ spring:
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://eureka-server:8761/eureka/
 
 logging:
   level:
