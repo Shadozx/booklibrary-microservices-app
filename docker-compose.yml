@@ -1,53 +1,9 @@
-#version: "3.3"
-
-#services:
-#  eureka-server:
-#    build: eureka-server/
-#    ports:
-#      - "8761:8761"
-#    networks:
-#      - docker_network
-#    healthcheck:
-#      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
-#      interval: 30s
-#      timeout: 10s
-#      retries: 5
-#
-#  config-server:
-#    build: config-server/
-#    ports:
-#      - "8080:8080"
-#    depends_on:
-#      - eureka-server
-#    networks:
-#      - docker_network
-#    healthcheck:
-#      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
-#      interval: 30s
-#      timeout: 10s
-#      retries: 5
-#
-#  author-service:
-#    build: services/author-service/
-#    ports:
-#      - "9085:9085"
-#    depends_on:
-#      - config-server
-#    networks:
-#      - docker_network
-#    healthcheck:
-#      test: ["CMD", "curl", "-f", "http://localhost:9085/actuator/health"]
-#      interval: 30s
-#      timeout: 10s
-#      retries: 5
-#
-#networks:
-#  docker_network:
-#    driver: bridge
-
-#version: '3.8'
+# services containers settings
 
 services:
+
+  # eureka server container settings
+
   eureka-server:
     build: eureka-server/
     ports:
@@ -65,6 +21,7 @@ services:
     networks:
       - book_library_network
 
+  # config server container settings
 
   config-server:
     build: config-server/
@@ -85,6 +42,8 @@ services:
           memory: 512M
     networks:
       - book_library_network
+
+  # author service containers settings
 
   author-service-db:
     image: postgres:latest
@@ -113,7 +72,7 @@ services:
   author-service:
     build: services/author-service/
     ports:
-      - "9085:9085"
+      - "9050:9050"
     depends_on:
       author-service-db:
         condition: service_healthy
@@ -122,7 +81,7 @@ services:
         limits:
           memory: 512M
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:9085/actuator/health || exit 1" ]
+      test: [ "CMD-SHELL", "curl -f http://localhost:9050/actuator/health || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -130,6 +89,53 @@ services:
     networks:
       - book_library_network
 
+  # book service containers settings
+
+  book-service-db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: book_library_book_service_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d book_library_book_service_db" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      config-server:
+        condition: service_healthy
+    ports:
+      - "5433:5432"
+    networks:
+      - book_library_network
+
+  book-server:
+    build: services/book-service/
+    ports:
+      - "9055:9055"
+    depends_on:
+      book-service-db:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:9055/actuator/health || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - book_library_network
+
+  # book catalog service containers settings
 
   bookcatalog-service-db:
     image: postgres:latest
@@ -151,23 +157,23 @@ services:
       config-server:
         condition: service_healthy
     ports:
-      - "5433:5432"
+      - "5434:5432"
     networks:
       - book_library_network
 
   bookcatalog-service:
     build: services/bookcatalog-service/
     ports:
-      - "9099:9099"
+      - "9060:9060"
     depends_on:
-        bookcatalog-service-db:
-          condition: service_healthy
+      bookcatalog-service-db:
+        condition: service_healthy
     deploy:
       resources:
         limits:
           memory: 512M
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:9099/actuator/health || exit 1" ]
+      test: [ "CMD-SHELL", "curl -f http://localhost:9060/actuator/health || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -175,15 +181,8 @@ services:
     networks:
       - book_library_network
 
+# network settings
 
 networks:
   book_library_network:
     driver: bridge
-
-#  book-server:
-#    build: services/book-service/
-#    ports:
-#      - "9090:9090"
-#    depends_on:
-#      config-server:
-#        condition: service_healthy
