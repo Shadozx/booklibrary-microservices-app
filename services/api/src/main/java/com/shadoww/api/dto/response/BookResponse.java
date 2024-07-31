@@ -23,7 +23,7 @@ public class BookResponse {
 
     String bookImageUrl;
 
-    String uploadedUrl;
+//    String uploadedUrl;
 
 //    public BookResponse(Book book) {
 //        this.id = book.getId();
@@ -39,12 +39,12 @@ public class BookResponse {
 //    }
 
 
-    public BookResponse(long id, String title, String description, long amount, String bookImageUrl, String uploadedUrl) {
+    public BookResponse(long id, String title, String description, long amount, String bookImageUrl) {
         this.id = id;
         this.title = title;
         this.description = description;
         this.amount = amount;
         this.bookImageUrl = bookImageUrl;
-        this.uploadedUrl = uploadedUrl;
+//        this.uploadedUrl = uploadedUrl;
     }
 }

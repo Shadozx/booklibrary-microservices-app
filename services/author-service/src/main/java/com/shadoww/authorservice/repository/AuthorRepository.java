@@ -8,7 +8,7 @@ import java.util.Optional;
 
 @Repository
 public interface AuthorRepository extends JpaRepository<Author, Long> {
-    boolean existsByUploadedUrl(String uploadedUrl);
+//    boolean existsByUploadedUrl(String uploadedUrl);
     Optional<Author> findByName(String name);
     boolean existsByName(String name);
 

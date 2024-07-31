@@ -1,1 +1,4 @@
 rootProject.name = 'author-service'
+
+include ':services:api'
+include ':services:exception-handler'

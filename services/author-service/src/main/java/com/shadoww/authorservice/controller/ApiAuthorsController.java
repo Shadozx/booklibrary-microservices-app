@@ -7,6 +7,7 @@ import com.shadoww.authorservice.mapper.AuthorMapper;
 import com.shadoww.authorservice.model.Author;
 import com.shadoww.authorservice.service.interfaces.AuthorService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 //import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +20,7 @@ public class ApiAuthorsController {
     private final AuthorService authorService;
 
     private final AuthorMapper authorMapper;
+
     @Autowired
     public ApiAuthorsController(
             AuthorService authorService, AuthorMapper authorMapper) {
@@ -32,6 +34,15 @@ public class ApiAuthorsController {
                 .stream()
                 .map(authorMapper::dtoToResponse)
                 .toList());
+    }
+
+    @PostMapping
+    public ResponseEntity<?> createAuthor(@RequestBody AuthorRequest request) {
+        Author author = authorMapper.dtoToModel(request);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(authorMapper.dtoToResponse(authorService.create(author)));
+
     }
 
     @GetMapping("/{id}")
@@ -52,17 +63,16 @@ public class ApiAuthorsController {
 
         Author author = authorService.readById(id);
 
-        if(request.getName() != null) {
+        if (request.getName() != null) {
             author.setName(request.getName());
         }
-        if(request.getBiography() != null) {
-            author.setBiography(request.getBiography());
-        }
+
+        author.setBiography(request.getBiography());
 
         return ResponseEntity.ok(authorMapper.dtoToResponse(authorService.update(author)));
     }
 
-//    @PreAuthorize("hasRole('ADMIN')")
+    //    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteAuthor(@PathVariable long id) {
         authorService.deleteById(id);

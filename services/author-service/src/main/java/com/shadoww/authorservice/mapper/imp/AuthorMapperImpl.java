@@ -23,6 +23,7 @@ public class AuthorMapperImpl implements AuthorMapper {
     public Author dtoToModel(AuthorRequest request) {
         Author author = new Author();
 
+        author.setId(null);
         author.setName(request.getName());
         author.setBiography(request.getBiography());
 
@@ -35,8 +36,8 @@ public class AuthorMapperImpl implements AuthorMapper {
         return new AuthorResponse(
                 author.getId(),
                 author.getName(),
-                author.getBiography(),
-                author.getUploadedUrl());
+                author.getBiography()
+        );
     }
 
     @Override

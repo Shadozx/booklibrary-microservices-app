@@ -12,10 +12,10 @@ spring:
         locator:
           enabled: true
       routes:
-#        - id: book-service
-#          uri: lb://book-service
-#          predicates:
-#            - Path=/api/v1/**
+        - id: book-service
+          uri: lb://book-service
+          predicates:
+            - Path=/api/v1/**
         - id: author-service
           uri: lb://author-service
           predicates:

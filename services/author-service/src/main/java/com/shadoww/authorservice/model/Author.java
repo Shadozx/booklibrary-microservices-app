@@ -36,9 +36,8 @@ public class Author {
     /**
      * Звідки був взятий автор (силка) а якщо пусто то значить власноруч було додано
      **/
-    @Column(name = "uploaded_url")
-    private String uploadedUrl;
-
+//    @Column(name = "uploaded_url")
+//    private String uploadedUrl;
 
 
     @Override
@@ -60,7 +59,7 @@ public class Author {
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", biography='" + biography + '\'' +
-                ", url='" + uploadedUrl + '\'' +
+//                ", url='" + uploadedUrl + '\'' +
                 '}';
     }
 }

@@ -11,7 +11,7 @@ public interface AuthorService extends CrudService<Author, Long> {
 
 
     boolean existsByName(String name);
-    boolean existsByUrl(String url);
+//    boolean existsByUrl(String url);
 
 //    List<Author> getBookAuthors(Long bookId);
 }

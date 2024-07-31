@@ -9,7 +9,6 @@ import org.mapstruct.Mapper;
 @Mapper
 public interface AuthorMapper {
 
-//    AuthorMapper INSTANCE = Mappers.getMapper(AuthorMapper.class);
 
     AuthorRequest dtoToRequest(Author author);
 

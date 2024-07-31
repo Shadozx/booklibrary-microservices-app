@@ -1,10 +1,14 @@
 package com.shadoww.authorservice.service.impl;
 
+import com.shadoww.api.exception.NotFoundException;
+import com.shadoww.api.exception.ValueAlreadyExistsException;
 import com.shadoww.authorservice.model.Author;
 import com.shadoww.authorservice.repository.AuthorRepository;
 import com.shadoww.authorservice.service.interfaces.AuthorService;
 
-import jakarta.persistence.EntityNotFoundException;
+//import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,10 +22,13 @@ public class AuthorServiceImpl implements AuthorService {
 
     private final AuthorRepository authorRepository;
 
+//    private final Validator validator;
 
     @Autowired
     public AuthorServiceImpl(AuthorRepository authorRepository) {
         this.authorRepository = authorRepository;
+
+//        validator = Validation.buildDefaultValidatorFactory().getValidator();
     }
 
     @Override
@@ -29,19 +36,23 @@ public class AuthorServiceImpl implements AuthorService {
     public Author create(Author author) {
         checkIsAuthorNull(author);
 
+        if (existsByName(author.getName())) {
+            throw new ValueAlreadyExistsException("Автор з таким іменем вже існує!");
+        }
+
         return save(author);
     }
 
     @Override
     public Author readById(Long id) {
         return authorRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Такого автора не існує..."));
+                .orElseThrow(() -> new NotFoundException("Такого автора не існує..."));
     }
 
     @Override
     public Author readByName(String name) {
         return findByName(name)
-                .orElseThrow(() -> new EntityNotFoundException("Такого автора не існує!"));
+                .orElseThrow(() -> new NotFoundException("Такого автора не існує!"));
     }
 
     @Override
@@ -54,10 +65,10 @@ public class AuthorServiceImpl implements AuthorService {
         return authorRepository.existsByName(name);
     }
 
-    @Override
-    public boolean existsByUrl(String url) {
-        return authorRepository.existsByUploadedUrl(url);
-    }
+//    @Override
+//    public boolean existsByUrl(String url) {
+//        return authorRepository.existsByUploadedUrl(url);
+//    }
 
 
     @Override
@@ -109,7 +120,7 @@ public class AuthorServiceImpl implements AuthorService {
 
     private void checkIsAuthorNull(Author author) {
         if (author == null) {
-            throw new NullPointerException("Автор не може бути пустим");
+            throw new NotFoundException("Автор не може бути пустим");
         }
     }
 }

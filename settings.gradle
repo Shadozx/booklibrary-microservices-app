@@ -2,7 +2,9 @@
 include 'config-server'
 include 'gateway-server'
 include 'eureka-server'
-include ':services:book-service'
+
 include ':services:api'
 include ':services:exception-handler'
 include ':services:author-service'
+include ':services:book-service'
+include ':services:bookcatalog-service'

@@ -18,7 +18,7 @@ public interface BookRepository extends JpaRepository<Book, Long> {
 //    List<Book> findByAuthors(Author authors);
 //    List<Book> findBySeries(BookSeries series);
 
-    Optional<Book> findByUploadedUrl(String uploadedUrl);
+//    Optional<Book> findByUploadedUrl(String uploadedUrl);
 
 
 
@@ -28,7 +28,7 @@ public interface BookRepository extends JpaRepository<Book, Long> {
 
 //    Page<Book> findBooksByOrderByCreatedAtDesc(Pageable page);
 
-    boolean existsBookByUploadedUrl(String uploadedUrl);
+//    boolean existsBookByUploadedUrl(String uploadedUrl);
 
     boolean existsBookByTitle(String title);
 //    List<Book> findFirst1OrderByAdded();

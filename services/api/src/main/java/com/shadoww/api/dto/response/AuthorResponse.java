@@ -16,13 +16,13 @@ public class AuthorResponse {
 
     String biography;
 
-    String uploadedUrl;
+//    String uploadedUrl;
 
-    public AuthorResponse(long id, String name, String biography, String uploadedUrl) {
+    public AuthorResponse(long id, String name, String biography) {
         this.id = id;
         this.name = name;
         this.biography = biography;
-        this.uploadedUrl = uploadedUrl;
+//        this.uploadedUrl = uploadedUrl;
     }
 
 

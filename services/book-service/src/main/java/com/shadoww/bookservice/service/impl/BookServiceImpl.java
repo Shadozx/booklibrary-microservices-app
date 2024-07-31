@@ -4,6 +4,7 @@ package com.shadoww.bookservice.service.impl;
 import com.shadoww.api.dto.request.book.BookFilterRequest;
 import com.shadoww.api.exception.NotFoundException;
 import com.shadoww.api.exception.NullEntityReferenceException;
+import com.shadoww.api.exception.ValueAlreadyExistsException;
 import com.shadoww.bookservice.model.Book;
 import com.shadoww.bookservice.repository.BookRepository;
 import com.shadoww.bookservice.service.interfaces.BookService;
@@ -31,6 +32,10 @@ public class BookServiceImpl implements BookService {
 
         checkIsBookNull(book);
 
+        if (existByTitle(book.getTitle())) {
+            throw new ValueAlreadyExistsException("Книга з такою назвою вже існує");
+        }
+
         return save(book);
     }
 
@@ -47,7 +52,9 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public Book getByTitle(String title) {
-        return bookRepository.findByTitle(title).orElseThrow(() -> new NotFoundException("Книжки з такою назвою не існує"));
+        return bookRepository
+                .findByTitle(title)
+                .orElseThrow(() -> new NotFoundException("Книжки з такою назвою не існує"));
     }
 
     @Override
@@ -73,6 +80,10 @@ public class BookServiceImpl implements BookService {
         checkIsBookNull(updatedBook);
 
         readById(updatedBook.getId());
+
+        if (existByTitle(updatedBook.getTitle())) {
+            throw new ValueAlreadyExistsException("Книга з такою назвою вже існує");
+        }
 
         return save(updatedBook);
     }

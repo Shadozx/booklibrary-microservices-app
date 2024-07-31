@@ -38,8 +38,8 @@ public class BookMapperImpl implements BookMapper {
                 book.getTitle(),
                 book.getDescription(),
                 book.getAmount(),
-                book.getBookImageId().toString(),
-                book.getUploadedUrl());
+                book.getBookImageId().toString());
+//                book.getUploadedUrl());
     }
 
     @Override

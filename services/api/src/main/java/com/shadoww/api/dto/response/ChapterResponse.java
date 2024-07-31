@@ -15,7 +15,7 @@ public class ChapterResponse {
 
     long bookId;
 
-    long chapterNumber;
+    int chapterNumber;
 
 //    public ChapterResponse(Chapter chapter) {
 //        this.id = chapter.getId();

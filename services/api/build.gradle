@@ -1,5 +1,5 @@
 plugins {
-    id 'java'
+    id 'java-library'
     id 'org.springframework.boot' version '3.3.2'
     id 'io.spring.dependency-management' version '1.1.6'
 }
@@ -23,28 +23,17 @@ repositories {
     mavenCentral()
 }
 
+bootJar {
+    enabled = false
+}
+jar {
+    enabled = true
+}
 
 dependencies {
-
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-
-//    implementation 'org.springframework.cloud:spring-cloud-starter'
-    compileOnly 'org.projectlombok:lombok'
-
     annotationProcessor 'org.projectlombok:lombok'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    compileOnly 'org.projectlombok:lombok'
 
     // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.0.1'
-}
-
-//dependencyManagement {
-//    imports {
-//        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
-//    }
-//}
-
-tasks.named('test') {
-    useJUnitPlatform()
 }

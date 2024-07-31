@@ -4,6 +4,7 @@ package com.shadoww.bookservice.controller;
 import com.shadoww.api.dto.request.book.BookFilterRequest;
 import com.shadoww.api.dto.request.book.BookRequest;
 import com.shadoww.api.exception.NotFoundException;
+import com.shadoww.api.exception.ValueAlreadyExistsException;
 import com.shadoww.bookservice.mapper.BookMapper;
 import com.shadoww.bookservice.model.Book;
 import com.shadoww.bookservice.service.interfaces.BookService;
@@ -44,7 +45,7 @@ public class ApiBooksController {
 
         return ResponseEntity.ok(
                 bookService.getAll()
-                        .stream().map(this::mapToBookResponse)
+                        .stream().map(bookMapper::dtoToResponse)
                         .toList()
         );
     }
@@ -73,43 +74,21 @@ public class ApiBooksController {
      */
 //    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public ResponseEntity<?> createBook(@RequestBody BookRequest form) {
+    public ResponseEntity<?> createBook(
+            @RequestBody BookRequest form) {
 
-//        if (form.isEmpty()) return ResponseBook.noContent();
-//
-//        if (form.isTitleEmpty()) return ResponseBook.noContent("Назва книжки немає бути пустою");
-
-//        if (bookService.existByTitle(form.getTitle().trim())) return ResponseBook.exist();
-
+        if (form.isTitleEmpty()) {
+            return noContent("Назва книжки немає бути пустою");
+        }
 
         Book book = new Book();
         book.setTitle(form.getTitle());
 
-        if (!form.isDescriptionEmpty()) {
-            book.setDescription(form.getDescription());
-        }
+        book.setDescription(form.getDescription());
 
-//        if (!form.isBookImageUrlEmpty()) {
-//            try {
-//                BookImage bookImage = (BookImage) ParserHelper.parseImage(form.getBookImage());
-//
-//                book.setBookImage(bookImage);
-//                bookImage.setBook(book);
-//
-////                bookService.saveBookImage(book, bookImage);
-//            } catch (IOException e) {
-//                System.out.println("Error message in adding book with message:" + e.getMessage());
-//                return ResponseBook.errorServer();
-//            }
-//        } else {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(bookMapper.dtoToResponse(bookService.create(book)));
-//        }
-
-//        return ResponseBook.addSuccess();
-
-//        return ResponseEntity.ok().build();
     }
 
     /**
@@ -120,60 +99,33 @@ public class ApiBooksController {
     public ResponseEntity<?> updateBook(@PathVariable long bookId,
                                         @RequestBody BookRequest request) {
 
-//        if (request.isEmpty()) return ResponseBook.noContent();
-
         Book book = bookService.readById(bookId);
-
 
         if (!request.isTitleEmpty()) {
             book.setTitle(request.getTitle());
         }
 
-        if (!request.isDescriptionEmpty()) {
-            book.setDescription(request.getDescription());
-        }
+        book.setDescription(request.getDescription());
 
-//        if (!request.isBookImageUrlEmpty()) {
-//
-//            try {
-//
-//                BookImage parsedImage = (BookImage) ParserHelper.parseImage(request.getBookImage());
-//
-//                BookImage bookImage = book.getBookImage();
-//
-//                if (bookImage == null) bookImage = new BookImage();
-//
-//                bookImage.setData(parsedImage.getData());
-//
-//                System.out.println("BookImage parsing...");
-//                System.out.println(bookImage);
-//                book.setBookImage(bookImage);
-//                bookImage.setBook(book);
-//
-////                bookService.saveBookImage(book, bookImage);
-//            } catch (IOException e) {
-//                System.out.println("Error message in adding book with message:" + e.getMessage());
-//                return ResponseBook.errorServer();
-//            }
-//        }
-//        else {
-//            bookService.update(book);
+//        if (!request.isDescriptionEmpty()) {
+//            book.setDescription(request.getDescription());
 //        }
 
-//        return ResponseBook.addSuccess();
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(
+                        bookMapper.dtoToResponse(bookService.update(book))
+                );
     }
 
     /**
      * Delete a book by book's id
      */
-//    @PreAuthorize("hasRole('ADMIN')")
+
+    //    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteBook(@PathVariable long id) {
 
         bookService.deleteById(id);
 
-//        return ResponseBook.deleteSuccess();
         return ResponseEntity.ok().build();
     }
 
@@ -187,5 +139,11 @@ public class ApiBooksController {
 //                "");
 
         return bookMapper.dtoToResponse(book);
+    }
+
+    private ResponseEntity<?> noContent(String message) {
+        return ResponseEntity
+                .status(HttpStatus.NO_CONTENT)
+                .body(message);
     }
 }

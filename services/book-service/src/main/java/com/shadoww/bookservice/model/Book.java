@@ -48,8 +48,8 @@ public class Book {
     /**
      * Звідки була взята книжка (силка) а якщо пусто то значить власноруч було додано
      **/
-    @Column(name = "uploaded_url")
-    private String uploadedUrl;
+//    @Column(name = "uploaded_url")
+//    private String uploadedUrl;
 
     /**
      * Коли була добавлена книжка
