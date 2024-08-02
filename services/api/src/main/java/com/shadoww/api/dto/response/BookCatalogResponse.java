@@ -24,6 +24,15 @@ public class BookCatalogResponse {
 //        this.title = catalog.getTitle();
 //        this.ownerId = catalog.getOwner().getId();
 //    }
+
+
+    public BookCatalogResponse(long id, String title, boolean isPublic, long ownerId) {
+        this.id = id;
+        this.title = title;
+        this.isPublic = isPublic;
+        this.ownerId = ownerId;
+    }
+
     public boolean getIsPublic() {
         return isPublic;
     }

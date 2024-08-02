@@ -2,14 +2,18 @@ package com.shadoww.api.dto.response;
 
 //import com.shadoww.api.model.BookMark;
 //import com.shadoww.BookLibraryApp.model.Chapter;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.Value;
 
 @Value
+//@Setter
+//@Getter
 public class BookMarkResponse {
 
     long id;
 
-    long paragraph;
+    int paragraph;
 
     long catalogId;
 

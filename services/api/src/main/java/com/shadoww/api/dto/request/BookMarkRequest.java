@@ -11,7 +11,7 @@ public class BookMarkRequest {
 
     private long bookId;
     private long chapterId;
+    private long catalogId;
+    private long ownerId;
     private int paragraph;
-
-
 }

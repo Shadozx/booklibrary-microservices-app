@@ -8,8 +8,6 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
 
 import java.util.List;
 
@@ -35,10 +33,8 @@ public class BookCatalog {
     @Column(name = "owner_id")
     private Long ownerId;
 
-    @OneToMany(mappedBy = "catalog")
-    @Cascade({CascadeType.DELETE, CascadeType.REMOVE})
+    @OneToMany(mappedBy = "catalog", cascade = CascadeType.REMOVE)
     private List<BookMark> bookMarks;
-
 
 //    public BookCatalog(BookCatalogRequest bookCatalogRequest) {
 //        this.setTitle(bookCatalogRequest.getTitle());
