@@ -8,7 +8,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class BookLinkRequest {
+public class ParseLinkRequest {
 
     @JsonProperty("url")
     String url;

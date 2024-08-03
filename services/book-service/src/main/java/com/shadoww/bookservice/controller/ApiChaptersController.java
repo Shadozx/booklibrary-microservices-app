@@ -2,31 +2,17 @@ package com.shadoww.bookservice.controller;
 
 
 import com.shadoww.api.dto.request.ChapterRequest;
-import com.shadoww.api.dto.response.ChapterResponse;
+import com.shadoww.api.util.texformatters.TextFormatter;
+import com.shadoww.api.util.texformatters.elements.TextElements;
 import com.shadoww.bookservice.mapper.ChapterMapper;
 import com.shadoww.bookservice.model.Book;
 import com.shadoww.bookservice.model.Chapter;
-//import com.shadoww.bookServiceApp.model.image.ChapterImage;
 import com.shadoww.bookservice.service.interfaces.BookService;
 import com.shadoww.bookservice.service.interfaces.ChapterService;
-//import com.shadoww.bookServiceApp.service.interfaces.ImageService;
-//import com.shadoww.bookServiceApp.util.responsers.ResponseBook;
-//import com.shadoww.bookServiceApp.util.responsers.ResponseChapter;
-//import com.shadoww.bookServiceApp.util.texformatters.TextFormatter;
-//import com.shadoww.bookServiceApp.util.texformatters.elements.TextElement;
-//import com.shadoww.bookServiceApp.util.texformatters.elements.TextElements;
-//import com.shadoww.bookServiceApp.util.texformatters.types.ElementType;
-import com.shadoww.bookservice.util.texformatters.TextFormatter;
-import com.shadoww.bookservice.util.texformatters.elements.TextElement;
-import com.shadoww.bookservice.util.texformatters.elements.TextElements;
-import com.shadoww.bookservice.util.texformatters.types.ElementType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-//import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 //@CrossOrigin(origins = "http://localhost:5173")
 @RestController
