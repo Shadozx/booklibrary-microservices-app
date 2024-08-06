@@ -1,8 +1,6 @@
 package com.shadoww.api.dto.response;
 
 
-//import com.shadoww.BookLibraryApp.model.Book;
-//import com.shadoww.BookLibraryApp.model.image.BookImage;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.Value;
