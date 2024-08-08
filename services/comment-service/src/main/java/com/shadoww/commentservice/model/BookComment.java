@@ -1,0 +1,16 @@
+package com.shadoww.commentservice.model;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
+@Entity
+@DiscriminatorValue("Book")
+@Setter
+@Getter
+public class BookComment extends Comment {
+
+    @Column(name = "book_id", nullable = false)
+    private Long bookId;
+
+}
