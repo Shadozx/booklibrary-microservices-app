@@ -1,14 +1,16 @@
 package com.shadoww.api.dto.response;
 
 //import com.shadoww.BookLibraryApp.model.BookRating;
+import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
 @Value
+@RequiredArgsConstructor
 public class BookRatingResponse {
 
     long id;
 
-    long rating;
+    int rating;
 
     long bookId;
 
@@ -20,4 +22,5 @@ public class BookRatingResponse {
 //        this.bookId = rating.getBook().getId();
 //        this.ownerId = rating.getOwner().getId();
 //    }
+
 }
