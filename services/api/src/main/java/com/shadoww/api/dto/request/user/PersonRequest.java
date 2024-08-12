@@ -1,7 +1,5 @@
 package com.shadoww.api.dto.request.user;
 
-
-//import com.shadoww.BookLibraryApp.model.user.Role;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,6 +9,8 @@ import lombok.Setter;
 @Getter
 public class PersonRequest {
 
+    private String email;
+
     private String username;
 
     private String password;
@@ -18,9 +18,12 @@ public class PersonRequest {
     private String role;
 
     public boolean isEmpty() {
-        return isUsernameEmpty() && isPasswordEmpty() && isRoleEmpty();
+        return isEmailEmpty() && isUsernameEmpty() && isPasswordEmpty() && isRoleEmpty();
     }
 
+    public boolean isEmailEmpty() {
+        return email == null || email.equals("");
+    }
     public boolean isUsernameEmpty() {
         return username == null || username.equals("");
     }
