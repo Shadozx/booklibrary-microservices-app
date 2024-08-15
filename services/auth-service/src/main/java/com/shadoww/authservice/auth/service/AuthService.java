@@ -1,5 +1,6 @@
 package com.shadoww.authservice.auth.service;
 
+import com.shadoww.jwtsecurity.auth.JwtService;
 import com.shadoww.api.dto.request.user.AuthPersonRequest;
 import com.shadoww.authservice.auth.request.AuthRequest;
 import com.shadoww.authservice.auth.response.AuthResponse;
@@ -48,4 +49,3 @@ public class AuthService {
     }
 
 }
-

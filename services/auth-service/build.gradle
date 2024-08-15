@@ -28,6 +28,7 @@ dependencies {
 
 	implementation project(':services:api')
 	implementation project(':services:exception-handler')
+	implementation project(':services:jwt-security')
 
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'

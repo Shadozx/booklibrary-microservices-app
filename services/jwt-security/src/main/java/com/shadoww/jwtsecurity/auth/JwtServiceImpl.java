@@ -1,6 +1,6 @@
-package com.shadoww.authservice.auth.service;
+package com.shadoww.jwtsecurity.auth;
 
-import com.shadoww.authservice.security.AuthUser;
+import com.shadoww.jwtsecurity.security.JwtUser;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -39,13 +39,15 @@ public class JwtServiceImpl implements JwtService {
             Map<String, Object> extractClaims,
             UserDetails userDetails
     ){
+        JwtUser user = (JwtUser) userDetails;
         return Jwts
                 .builder()
                 .claims(extractClaims)
                 .subject(userDetails.getUsername())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24))
-                .claim("role", ((AuthUser) userDetails).getPerson().getRole().getRoleName())
+                .claim("role", user.getRole())
+                .claim("userId", user.getUserId())
                 .signWith(getSigningKey(), Jwts.SIG.HS256)
                 .compact();
     }
@@ -55,7 +57,7 @@ public class JwtServiceImpl implements JwtService {
         return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
     }
 
-    private boolean isTokenExpired(String token) {
+    public boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
 

@@ -1,4 +1,4 @@
-package com.shadoww.authservice.auth.service;
+package com.shadoww.jwtsecurity.auth;
 
 import io.jsonwebtoken.Claims;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,4 +17,6 @@ public interface JwtService {
     String generateToken(Map<String, Object> extractClaims, UserDetails userDetails);
 
     boolean isTokenValid(String token, UserDetails userDetails);
+
+    boolean isTokenExpired(String token);
 }

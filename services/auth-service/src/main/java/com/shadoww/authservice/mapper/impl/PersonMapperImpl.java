@@ -30,7 +30,7 @@ public class PersonMapperImpl implements PersonMapper {
                 person.getUsername(),
                 person.getRole().name(),
                 person.getTheme().name(),
-                person.getPersonImageId().toString());
+                person.getPersonImageId() != null ? person.getPersonImageId().toString() : null);
     }
 
     @Override

@@ -12,4 +12,6 @@ include ':services:parser-service'
 include ':services:image-service'
 include ':services:rating-service'
 include ':services:comment-service'
+
+include ':services:jwt-security'
 include ':services:auth-service'

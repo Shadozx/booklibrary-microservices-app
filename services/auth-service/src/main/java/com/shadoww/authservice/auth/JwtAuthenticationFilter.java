@@ -1,6 +1,6 @@
 package com.shadoww.authservice.auth;
 
-import com.shadoww.authservice.auth.service.JwtService;
+import com.shadoww.jwtsecurity.auth.JwtService;
 import com.shadoww.authservice.service.PersonService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
