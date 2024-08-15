@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 //@CrossOrigin(origins = "http://localhost:5173")
 @RestController
-@RequestMapping("/books/{bookId}/chapters")
+@RequestMapping("/api/books/{bookId}/chapters")
 public class ApiChaptersController {
 
     private final BookService bookService;

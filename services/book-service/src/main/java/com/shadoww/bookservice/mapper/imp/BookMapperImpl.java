@@ -38,7 +38,7 @@ public class BookMapperImpl implements BookMapper {
                 book.getTitle(),
                 book.getDescription(),
                 book.getAmount(),
-                book.getBookImageId().toString());
+                book.getBookImageId() != null ? book.getBookImageId().toString() : null);
 //                book.getUploadedUrl());
     }
 

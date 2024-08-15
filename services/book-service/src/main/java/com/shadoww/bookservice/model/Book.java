@@ -3,7 +3,6 @@ package com.shadoww.bookservice.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -58,7 +57,8 @@ public class Book {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
-    @Size(min = 1)
+//    @Size(min = 1)
+    @Column(name = "image_id")
     private Long bookImageId;
 
     /**
