@@ -70,12 +70,15 @@ public class Parser {
     }
 
     public boolean canParseBookImage() {
+
         return bookImageParser != null;
     }
 
     public ImageInstance parseBookImage(String url) {
         try {
-            if (bookImageParser == null) return null;
+            if (bookImageParser == null || !canParseBookImage()) {
+                throw new IllegalArgumentException("Немає здатності парсити фото книги");
+            }
 
             return bookImageParser.parse(url);
         } catch (IOException e) {
@@ -132,6 +135,7 @@ public class Parser {
         chapters = chapterParser.parse(url, book);
 
         images = chapterParser.getChapterImages();
+
 
         return chapters;
     }

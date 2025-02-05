@@ -17,7 +17,7 @@ public class BookInstance {
     private String description;
 
 
-    private int amount;
+    private long amount;
 
     private ImageInstance bookImage;
 

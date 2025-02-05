@@ -19,7 +19,7 @@ public class BookResponse {
 
     long amount;
 
-    String bookImageUrl;
+    Long imageId;
 
 //    String uploadedUrl;
 
@@ -37,12 +37,12 @@ public class BookResponse {
 //    }
 
 
-    public BookResponse(long id, String title, String description, long amount, String bookImageUrl) {
+    public BookResponse(long id, String title, String description, long amount, Long imageId) {
         this.id = id;
         this.title = title;
         this.description = description;
         this.amount = amount;
-        this.bookImageUrl = bookImageUrl;
+        this.imageId = imageId;
 //        this.uploadedUrl = uploadedUrl;
     }
 }

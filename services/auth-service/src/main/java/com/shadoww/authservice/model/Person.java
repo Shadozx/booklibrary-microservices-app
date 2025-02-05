@@ -1,5 +1,6 @@
 package com.shadoww.authservice.model;
 
+
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

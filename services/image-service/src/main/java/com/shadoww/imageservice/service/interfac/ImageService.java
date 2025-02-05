@@ -13,7 +13,7 @@ public interface ImageService extends CrudService<Image, Long> {
 
     Image getImageByFilename(String filename);
 
-    List<Image> getImages(long bookId);
+    List<Image> getBookImages(long bookId);
     List<Image> getChapterImages(long chapterId);
 
     void deleteByFilename(String filename);

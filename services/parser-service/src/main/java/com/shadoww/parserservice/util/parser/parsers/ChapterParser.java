@@ -3,6 +3,7 @@ package com.shadoww.parserservice.util.parser.parsers;
 //import com.shadoww.BookLibraryApp.model.Book;
 //import com.shadoww.BookLibraryApp.model.Chapter;
 //import com.shadoww.BookLibraryApp.model.image.ChapterImage;
+
 import com.shadoww.parserservice.util.instances.BookInstance;
 import com.shadoww.parserservice.util.instances.ChapterInstance;
 import com.shadoww.parserservice.util.instances.ImageInstance;
@@ -82,29 +83,27 @@ public class ChapterParser {
 
     /**
      * книжка:
-     *      селектор глави
-     *      селектор опису
-     *
+     * селектор глави
+     * селектор опису
+     * <p>
      * фотографія книжки:
-     *      селектор на фотографію
+     * селектор на фотографію
      * <p>
      * глави:
-     *      глава:
-     *          селектор на назву глави
-     *          селектор на текст
+     * глава:
+     * селектор на назву глави
+     * селектор на текст
      * <p>
-     *
+     * <p>
      * пишемо функцію яка дає силки на глави
      * <p>
-     *
-     *
-     * */
+     */
 
     //
     private List<String> getLinks(ChapterSelectors chapterSelectors) throws IOException {
 
         if (!chapterSelectors.isEmpty()) {
-            for(ChapterSelector chapterSelector : chapterSelectors) {
+            for (ChapterSelector chapterSelector : chapterSelectors) {
 
                 ChapterLinks chapterLinks = chapterSelector.getChapterLinks();
 
@@ -125,7 +124,7 @@ public class ChapterParser {
 
     private Stack<ChapterInstance> getChapterInstances(ChapterSelectors chapterSelectors, Document page) {
 
-        for(ChapterSelector chapterSelector : chapterSelectors) {
+        for (ChapterSelector chapterSelector : chapterSelectors) {
 
             Stack<ChapterInstance> chapterInstances = getPage(chapterSelector, page);
 
@@ -154,31 +153,32 @@ public class ChapterParser {
 
             if (elementsFormatter != null) elements = elementsFormatter.format(elements);
 
-            if (chapterSelector.getTextSelector() != null && !chapterSelector.getTextSelector().equals("")) elements = elements.select(chapterSelector.getTextSelector());
-
+            if (chapterSelector.getTextSelector() != null && !chapterSelector.getTextSelector().equals("")) {
+                elements = elements.select(chapterSelector.getTextSelector());
+            }
 
             FilterElements filterElements = chapterSelectors.getFilterElements();
 
-            if (filterElements != null)
+            if (filterElements != null) {
                 elements = elements.stream().filter(filterElements::filter).collect(Collectors.toCollection(Elements::new));
-
+            }
 
             if (!elements.isEmpty()) {
 
-//                System.out.println(elements.size());
+                System.out.println(elements.size());
 
                 Stack<ChapterInstance> chapterInstances = new Stack<>();
 
 
                 for (Element el : elements) {
+
+                    System.out.println(el.tagName().trim());
                     if (chapterSelector.getTitles().contains(el.tagName() + (!el.className().equals("") ? ("." + el.className()) : ""))) {
 
                         TextConvector textConvector = chapterSelector.getTextConvector();
                         if (textConvector != null) {
                             textConvector.transform(chapterInstances, el);
-                        }
-
-                        else {
+                        } else {
                             ChapterInstance prev = !chapterInstances.isEmpty() ? chapterInstances.pop() : new ChapterInstance();
 
 
@@ -190,18 +190,21 @@ public class ChapterParser {
                             ChapterInstance current = !chapterInstances.isEmpty() ? chapterInstances.pop() : new ChapterInstance();
                             TextElements textElements = chapterSelector.getParagraph().getParagraph(el, current, this.chapterImages, this.book);
 
-                            if (textElements != null) current.addText(textElements.toPatternText());
+                            if (textElements != null) current.addAllTextElements(textElements);
+
+//                            if (el.tagName().equals("table")) {
+//                                System.out.println(el);
+//                            }
 
                             chapterInstances.push(current);
-                        }
-                        else {
+                        } else {
 //                            System.out.println("Paragraph is empty...");
 
                             ChapterInstance prev = !chapterInstances.isEmpty() ? chapterInstances.pop() : new ChapterInstance();
 
                             TextElements textElements = getParagraphText(el, prev);
 
-                            if (textElements != null) prev.addText(textElements.toPatternText());
+                            prev.addAllTextElements(textElements);
 
                             chapterInstances.push(prev);
                         }
@@ -209,10 +212,10 @@ public class ChapterParser {
                 }
 
                 return chapterInstances;
+            } else {
+                System.out.println("Елементи тексту відсутні");
             }
-            else System.out.println("Елементи тексту відсутні");
-        }
-        else {
+        } else {
             List<String> titles = chapterSelector.getTitles();
 
             if (titles.size() == 1) {
@@ -224,21 +227,18 @@ public class ChapterParser {
 
                 Elements elements = page.select(chapterSelector.getTextSelector());
 
-                if (elements != null) {
-
-                    for (Element el : elements) {
-                        Paragraph paragraph = chapterSelector.getParagraph();
+                for (Element el : elements) {
+                    Paragraph paragraph = chapterSelector.getParagraph();
 
 
-                        TextElements textElements;
-                        if (paragraph != null) {
-                             textElements = paragraph.getParagraph(el, current, this.chapterImages, this.book);
+                    TextElements textElements;
+                    if (paragraph != null) {
+                        textElements = paragraph.getParagraph(el, current, this.chapterImages, this.book);
 
-                        }else {
-                             textElements = getParagraphText(el, current);
-                        }
-                        if (textElements != null) current.addText(textElements.toPatternText());
+                    } else {
+                        textElements = getParagraphText(el, current);
                     }
+                    if (textElements != null) current.addAllTextElements(textElements);
                 }
 
                 Stack<ChapterInstance> chapterInstances = new Stack<>();
@@ -254,14 +254,19 @@ public class ChapterParser {
     }
 
     private void addTitle(Element el, ChapterInstance prev, Stack<ChapterInstance> chapterInstances) {
-
-        if(prev.getTitle().equals("Примечания") && prev.getTitle().equals("Примітки") && el.text().matches("\\d+")) {
-
-            prev.addText(ParserHelper.formatText(el, ElementType.Paragraph).toPatternText());
+        if (prev.isTextEmpty()) {
+            prev.addTitle(el.text());
 
             chapterInstances.push(prev);
         }
 
+
+        else if (prev.getTitle().equals("Примечания") || prev.getTitle().equals("Примітки") || el.text().matches("\\d+")) {
+
+            prev.addTextElement(ParserHelper.formatText(el, ElementType.Paragraph));
+
+            chapterInstances.push(prev);
+        }
 
         // якщо існує глава, але має назву глави но немає тексту
         else if (!prev.isTitleEmpty() && prev.isTextEmpty()) {
@@ -269,8 +274,7 @@ public class ChapterParser {
             prev.addTitle(". " + el.text());
             chapterInstances.push(prev);
 
-        }
-        else {
+        } else {
             chapterInstances.push(prev);
 
             ChapterInstance current = new ChapterInstance();
@@ -282,38 +286,40 @@ public class ChapterParser {
         }
 
     }
+
     private TextElements getParagraphText(Element el, ChapterInstance current) {
         if (el.tagName().equals("img")) {
-            ImageInstance image = ParserHelper.addChapterImage(el, this.book);
+            ImageInstance image = ParserHelper.addChapterImage(el);
 
-            if (image != null) {
-                current.addChapterImage(image);
+            current.addChapterImage(image);
 
-                this.chapterImages.add(image);
+            this.chapterImages.add(image);
 
-                TextElement element = ParserHelper.formatText(el.attr("src", image.getFileName()), ElementType.Image);
+            TextElement element = ParserHelper.formatText(el.attr("src", image.getFileName()), ElementType.Image);
 
-                if (element != null) return new TextElements(List.of(element));
-            }
+            return new TextElements(List.of(element));
         } else {
-            TextElement element = ParserHelper.formatText(el, ElementType.Paragraph);
 
-            if (element != null) {
-                return new TextElements(List.of(element));
-            }
+//            if (el.tagName().equals("div") && el.className().equals("poem")) {
+//                System.out.println(el);
+//            }
+
+            TextElement element = ParserHelper.formatText(el.text(el.text()), ElementType.Paragraph);
+
+
+            return new TextElements(List.of(element));
         }
-
-        return null;
     }
+
     private List<ChapterInstance> formatChapters(List<ChapterInstance> chapters) {
         Stack<ChapterInstance> stack = new Stack<>();
-        chapters = chapters.stream().filter(c-> !c.isEmpty()).toList();
+        chapters = chapters.stream().filter(c -> !c.isEmpty()).toList();
 
-        for(int i = 0; i < chapters.size(); i++) {
+        for (int i = 0; i < chapters.size(); i++) {
             ChapterInstance current = chapters.get(i);
 
-            if(current != null) {
-                if(i == 0 && current.isTitleEmpty()) {
+            if (current != null) {
+                if (i == 0 && current.isTitleEmpty()) {
 
                     current.addTitle("* * *");
                     stack.push(current);
@@ -326,13 +332,12 @@ public class ChapterParser {
 //
 //                }
 
-                else if(current.isTitleEmpty()) {
+                else if (current.isTitleEmpty()) {
                     ChapterInstance prev = !stack.isEmpty() ? stack.pop() : new ChapterInstance();
 
                     prev.addChapterInstance(current);
                     stack.push(prev);
-                }
-                else stack.push(current);
+                } else stack.push(current);
             }
         }
 
@@ -341,8 +346,8 @@ public class ChapterParser {
 
 
     private List<ChapterInstance> addNumber(List<ChapterInstance> chapters) {
-        for(int i = 1; i <= chapters.size(); i++) {
-            chapters.get(i-1).setChapterNumber(i);
+        for (int i = 1; i <= chapters.size(); i++) {
+            chapters.get(i - 1).setChapterNumber(i);
         }
 
         return chapters;
@@ -350,16 +355,10 @@ public class ChapterParser {
 }
 
 /**
- *
  * Парсер:
- *  селектор на кількість глав якщо такий є
+ * селектор на кількість глав якщо такий є
  * <p>
- *  список глав селекторів який буде йти по списку якщо один не дав хорошого результату
- *      Глав селектор:
+ * список глав селекторів який буде йти по списку якщо один не дав хорошого результату
+ * Глав селектор:
  * <p>
- *
- *
- *
- *
- *
- * */
+ */

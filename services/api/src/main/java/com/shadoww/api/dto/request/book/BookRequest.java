@@ -13,7 +13,7 @@ public class BookRequest {
 
     private String description;
 
-    private String bookImage;
+    private Long imageId;
 
 
     public boolean isEmpty() {
@@ -29,7 +29,7 @@ public class BookRequest {
     }
 
     public boolean isBookImageUrlEmpty() {
-        return bookImage == null || bookImage.equals("");
+        return imageId == null;
     }
 
 

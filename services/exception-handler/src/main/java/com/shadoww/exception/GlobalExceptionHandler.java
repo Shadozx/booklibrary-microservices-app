@@ -10,6 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.multipart.MultipartException;
 
 import java.time.LocalDateTime;
 
@@ -42,13 +43,24 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(e, HttpStatus.CONFLICT, request);
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ExceptionResponse> handleInternalServerError(Exception e, WebRequest request) {
-
-        System.out.println(e.getMessage());
-
-        return buildErrorResponse(e, HttpStatus.INTERNAL_SERVER_ERROR, request);
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity<ExceptionResponse> handleFileUploadingError(MultipartException exception, WebRequest request) {
+        return buildErrorResponse(exception, HttpStatus.INTERNAL_SERVER_ERROR, request);
     }
+
+//    @ExceptionHandler(RuntimeException.class)
+//    public ResponseEntity<ExceptionResponse> handleRuntimeException(RuntimeException e, WebRequest request) {
+//        System.out.println("Runtime exception:" + e.getMessage());
+//        return buildErrorResponse(e, HttpStatus.INTERNAL_SERVER_ERROR, request);
+//    }
+//
+//    @ExceptionHandler(Exception.class)
+//    public ResponseEntity<ExceptionResponse> handleInternalServerError(Exception e, WebRequest request) {
+//
+//        System.out.println(e.getMessage());
+//
+//        return buildErrorResponse(e, HttpStatus.INTERNAL_SERVER_ERROR, request);
+//    }
 
     protected ResponseEntity<ExceptionResponse> buildErrorResponse(Exception ex, HttpStatus status, WebRequest request) {
         ExceptionResponse exceptionResponse = new ExceptionResponse(

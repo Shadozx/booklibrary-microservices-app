@@ -5,6 +5,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -20,7 +21,8 @@ import java.util.UUID;
 @NoArgsConstructor
 public class ChapterImage extends BookImage {
 
-    @NotBlank(message = "Chapter id cannot be empty")
+//    @NotBlank(message = "Chapter id cannot be empty")
+    @NotNull
     @Column(name = "chapter_id")
     private Long chapterId;
 

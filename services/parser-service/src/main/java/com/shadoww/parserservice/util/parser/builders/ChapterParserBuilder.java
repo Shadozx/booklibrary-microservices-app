@@ -29,8 +29,10 @@ public class ChapterParserBuilder {
 
     public ChapterParserBuilder links(ChapterLinks chapterLinks) {
 
+//        System.out.println(chapterLinks);
         this.chapterSelectors.setChapterLinks(chapterLinks);
 
+//        System.out.println(chapterSelectors);
         return this;
     }
 

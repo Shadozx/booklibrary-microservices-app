@@ -1,7 +1,9 @@
 package com.shadoww.imageservice.service.impl;
 
 import com.shadoww.api.exception.NotFoundException;
-import com.shadoww.imageservice.model.*;
+import com.shadoww.imageservice.model.BookImage;
+import com.shadoww.imageservice.model.ChapterImage;
+import com.shadoww.imageservice.model.Image;
 import com.shadoww.imageservice.repository.BookImageRepository;
 import com.shadoww.imageservice.repository.ChapterImageRepository;
 import com.shadoww.imageservice.repository.ImageRepository;
@@ -10,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -66,11 +69,11 @@ public class ImageServiceImpl implements ImageService {
     }
 
     @Override
-    public List<Image> getImages(long bookId) {
-        List<Image> images = chapterImageRepository.findByBookId(bookId)
+    public List<Image> getBookImages(long bookId) {
+        List<Image> images = new ArrayList<>(chapterImageRepository.findByBookId(bookId)
                 .stream()
                 .map(i -> (Image) i)
-                .toList();
+                .toList());
 
         Optional<BookImage> bookImage = bookImageRepository.findBookImageByBookId(bookId);
         bookImage.ifPresent(images::add);

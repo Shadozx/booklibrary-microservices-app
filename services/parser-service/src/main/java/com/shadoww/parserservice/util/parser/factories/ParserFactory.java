@@ -1,6 +1,6 @@
 package com.shadoww.parserservice.util.parser.factories;
 
-//import com.shadoww.BookLibraryApp.model.image.ChapterImage;
+
 import com.shadoww.parserservice.util.instances.ChapterInstance;
 import com.shadoww.parserservice.util.instances.ImageInstance;
 import com.shadoww.parserservice.util.parser.builders.ParserBuilder;
@@ -51,24 +51,21 @@ public class ParserFactory {
                 return elements;
             } else if (el.tagName().equals("img")) {
 
-                ImageInstance image = ParserHelper.addChapterImage(el, book);
+                ImageInstance image = ParserHelper.addChapterImage(el);
 
-                if (image != null) {
 
-                    current.addChapterImage(image);
+                current.addChapterImage(image);
 
-                    chapterImages.add(image);
+                chapterImages.add(image);
 
-                    TextElement element = ParserHelper.formatText(el.attr("src", image.getFileName()), ElementType.Image);
+                TextElement element = ParserHelper.formatText(el.attr("src", image.getFileName()), ElementType.Image);
 
-                    if (element != null) return new TextElements(List.of(element));
-                }
+                return new TextElements(List.of(element));
             } else {
                 TextElement element = ParserHelper.formatText(el, ElementType.Other);
-                if (element != null) return new TextElements(List.of(element));
+                return new TextElements(List.of(element));
             }
 
-            return null;
         });
 
 
@@ -195,7 +192,7 @@ public class ParserFactory {
                     ChapterInstance prev = !chapterInstances.isEmpty() ? chapterInstances.pop() : new ChapterInstance();
                     if (el.text().matches("\\d+")) {
 
-                        prev.addText(ParserHelper.formatText(el, ElementType.Paragraph).toPatternText());
+                        prev.addTextElement(ParserHelper.formatText(el, ElementType.Paragraph));
 
                         chapterInstances.push(prev);
 
@@ -237,12 +234,16 @@ public class ParserFactory {
                     Element element = el.tagName("b").removeAttr("class");
 
                     TextElement e = ParserHelper.formatText(element, ElementType.Other);
-                    if (e != null) return new TextElements(List.of(e));
+                    return new TextElements(List.of(e));
 
                 }
             }
 
-            if (el.tagName().equals("div")) {
+            else if (el.hasClass("em")) {
+                return new TextElements(List.of(ParserHelper.formatText(el.tagName("i"), ElementType.Other)));
+            }
+
+            else if (el.tagName().equals("div")) {
 
                 Elements children = el.children();
 
@@ -269,27 +270,22 @@ public class ParserFactory {
                 return elements;
             } else if (el.tagName().equals("img")) {
 
-                ImageInstance image = ParserHelper.addChapterImage(el, book);
+                ImageInstance image = ParserHelper.addChapterImage(el);
 
-                if (image != null) {
+                current.addChapterImage(image);
 
-                    current.addChapterImage(image);
+                chapterImages.add(image);
 
-                    chapterImages.add(image);
+                TextElement element = ParserHelper.formatText(el.attr("src", image.getFileName()), ElementType.Image);
 
-                    TextElement element = ParserHelper.formatText(el.attr("src", image.getFileName()), ElementType.Image);
-
-                    if (element != null) return new TextElements(List.of(element));
-                }
+                return new TextElements(List.of(element));
             } else if (el.tagName().equals("p")) {
                 TextElement element = ParserHelper.formatText(el, ElementType.Paragraph);
-                if (element != null) return new TextElements(List.of(element));
+                return new TextElements(List.of(element));
             } else {
                 TextElement element = ParserHelper.formatText(el, ElementType.Other);
-                if (element != null) return new TextElements(List.of(element));
+                return new TextElements(List.of(element));
             }
-
-            return null;
         });
 
         return new ParserBuilder()
@@ -396,7 +392,7 @@ public class ParserFactory {
 
                 if (elements.isEmpty()) {
                     TextElement el = ParserHelper.formatText(element, ElementType.Paragraph);
-                    if (el != null && !element.html().trim().isEmpty()) return new TextElements(List.of(el));
+                    if (!element.html().trim().isEmpty()) return new TextElements(List.of(el));
                 } else {
                     TextElements textElements = new TextElements();
                     for (Element el : elements) {
@@ -409,7 +405,7 @@ public class ParserFactory {
             } else if (element.hasClass("book")) {
                 TextElement el = ParserHelper.formatText(element, ElementType.Paragraph);
 
-                if (el != null) return new TextElements(List.of(el));
+                return new TextElements(List.of(el));
 
             } else if (element.tagName().equals("div") || element.hasClass("epigraph")) {
 
@@ -443,21 +439,31 @@ public class ParserFactory {
                 return elements;
             } else if (element.tagName().equals("img")) {
 
-                ImageInstance image = ParserHelper.addChapterImage(element, book);
+                ImageInstance image = ParserHelper.addChapterImage(element);
 
-                if (image != null) {
+                current.addChapterImage(image);
 
-                    current.addChapterImage(image);
+                chapterImages.add(image);
 
-                    chapterImages.add(image);
+                TextElement el = ParserHelper.formatText(element.attr("src", image.getFileName()), ElementType.Image);
 
-                    TextElement el = ParserHelper.formatText(element.attr("src", image.getFileName()), ElementType.Image);
+                return new TextElements(List.of(el));
+            } else if (element.tagName().equals("table")) {
 
-                    if (el != null) return new TextElements(List.of(el));
+                Elements elements = element.select("td");
+
+                TextElements textElements = new TextElements();
+
+                for(var e : elements) {
+                    textElements.add(ParserHelper.formatText(e, ElementType.Paragraph));
                 }
-            } else {
+
+                return textElements;
+            }
+
+            else {
                 TextElement el = ParserHelper.formatText(element, ElementType.Other);
-                if (element != null) return new TextElements(List.of(el));
+                return new TextElements(List.of(el));
             }
 
             return null;
@@ -519,6 +525,7 @@ public class ParserFactory {
                             List<String> tags = List.of("h1", "h2", "h3", "h4", "h5", "h6",
                                     "p",
                                     "img",
+                                    "table",
                                     "div");
 
                             if (nodes.stream().anyMatch(node -> node instanceof TextNode)) {
@@ -569,7 +576,7 @@ public class ParserFactory {
                     ChapterInstance prev = !chapterInstances.isEmpty() ? chapterInstances.pop() : new ChapterInstance();
                     if (el.text().matches("\\d+")) {
 
-                        prev.addText(ParserHelper.formatText(el, ElementType.Paragraph).toPatternText());
+                        prev.addTextElement(ParserHelper.formatText(el, ElementType.Paragraph));
 
                         chapterInstances.push(prev);
 
@@ -631,7 +638,7 @@ public class ParserFactory {
                 return elements;
             } else if (el.tagName().equals("img")) {
 
-                ImageInstance image = ParserHelper.addChapterImage(el, book);
+                ImageInstance image = ParserHelper.addChapterImage(el);
 
                 if (image != null) {
 
@@ -839,7 +846,7 @@ public class ParserFactory {
                 return elements;
             } else if (el.tagName().equals("img")) {
 
-                return ParserHelper.getParagraphImage(el, current, book, chapterImages);
+                return ParserHelper.getParagraphImage(el, current, chapterImages);
             } else {
                 TextElement element = ParserHelper.formatText(el, ElementType.Other);
                 if (element != null) return new TextElements(List.of(element));
@@ -901,7 +908,7 @@ public class ParserFactory {
                     ChapterInstance prev = !chapterInstances.isEmpty() ? chapterInstances.pop() : new ChapterInstance();
                     if (el.text().matches("\\d+")) {
 
-                        prev.addText(ParserHelper.formatText(el, ElementType.Paragraph).toPatternText());
+                        prev.addTextElement(ParserHelper.formatText(el, ElementType.Paragraph));
 
                         chapterInstances.push(prev);
 
@@ -958,7 +965,7 @@ public class ParserFactory {
                     ChapterInstance prev = !chapterInstances.isEmpty() ? chapterInstances.pop() : new ChapterInstance();
                     if (el.text().matches("\\d+")) {
 
-                        prev.addText(ParserHelper.formatText(el, ElementType.Paragraph).toPatternText());
+                        prev.addTextElement(ParserHelper.formatText(el, ElementType.Paragraph));
 
                         chapterInstances.push(prev);
 
@@ -987,7 +994,199 @@ public class ParserFactory {
                 .build();
     }
 
+    public static Parser createAncientRome() {
+
+        AtomicReference<Paragraph> paragraph = new AtomicReference<>();
+
+        paragraph.set((element, current, chapterImages, book) -> {
+
+            TextElements elements = new TextElements();
+            StringBuilder aggregatedText = new StringBuilder();
+
+
+            if (element.tagName().equals("div")) {
+                // Якщо елемент є контейнером, обробити його дочірні елементи
+                for (var node : element.childNodes()) {
+                    if (node.toString().equals("")) {
+                        continue;
+                    }
+                    else if (node instanceof org.jsoup.nodes.Element childElement) {
+                        String tagName = childElement.tagName();
+
+//                    System.out.println(node);
+                        if (tagName.equals("p")) {
+                            // Додати накопичений текст як новий параграф перед обробкою <p>
+
+                            if (!aggregatedText.isEmpty()) {
+
+                                elements.add(ParserHelper.formatText(new org.jsoup.nodes.Element("p").text(aggregatedText.toString().trim()), ElementType.Paragraph));
+                                aggregatedText.setLength(0);
+                            }
+                            // Обробити <p>
+                            if(!childElement.html().equals("")) {
+                                elements.add(ParserHelper.formatText(childElement.text(childElement.text().trim()), ElementType.Paragraph));
+                            }
+                        } else {
+                            // Збирати текст із дочірніх елементів, які не є <p>
+                            aggregatedText.append(childElement.text());
+                        }
+                    } else if (node instanceof org.jsoup.nodes.TextNode textNode) {
+                        // Додати текст із текстових вузлів
+                        aggregatedText.append(textNode.text());
+                    }
+                }
+            } else if (element.tagName().equals("img")) {
+
+                ImageInstance image = ParserHelper.addChapterImage(element);
+
+                current.addChapterImage(image);
+
+                chapterImages.add(image);
+
+                TextElement el = ParserHelper.formatText(element.attr("src", image.getFileName()), ElementType.Image);
+
+                if(el != null) {
+                    elements.add(el);
+                }
+            }else if (element.tagName().equals("table")) {
+                if (!element.html().equals("")) {
+//                    Element paragraphElement = new org.jsoup.nodes.Element("p");
+//                    paragraphElement.appendChild(new Element("i").text(element.text()));
+
+                    elements.addAll(new TextElements(List.of(ParserHelper.formatText(element.tagName("i").text(element.text()), ElementType.Other))));
+
+                }
+            }
+
+            else {
+                // Для інших типів елементів просто додати їх текст
+                if(!element.html().equals("")) {
+                    aggregatedText.append(element.text()).append(" ");
+                }
+            }
+
+            // Додати зібраний текст, якщо залишився після обробки
+            if (aggregatedText.length() > 0) {
+                elements.add(ParserHelper.formatText(new org.jsoup.nodes.Element("p").text(aggregatedText.toString().trim()), ElementType.Paragraph));
+            }
+
+            return elements;
+        });
+
+
+        return new ParserBuilder()
+                .host("ancientrome.ru")
+
+                .book()
+                .title("#pro")
+                .description("#publ")
+                .matchers("\\/antlitr\\/.+\\/index.+\\.htm")
+                .and()
+
+                .chapters()
+                .links(((bookUrl, main) -> {
+                    System.out.println(bookUrl);
+
+                    main.select("div#perl").remove();
+
+                    Elements divs = main.select("center > div.list > div.list1 > *");
+
+                    List<String> links = new ArrayList<>();
+
+                    for (var d : divs) {
+
+                        if (!d.select("a").isEmpty()) {
+
+                            String link = d.select("a").first().absUrl("href").trim();
+
+                            System.out.println(link);
+
+                            links.add(link);
+                        }
+                    }
+
+//                    System.out.println("links");
+//                    System.out.println(links);
+
+
+                    return links;
+                }))
+                .deleteElements("h1 a", "script", "noindex", "div.hr", "div.otext span", "sub", "sup", "div.otext br", "wbr", "div.ignored", "br")
+                /*.format((elements -> {
+
+                    if (elements.size() == 1) {
+                        Stack<Element> newElements = new Stack<>();
+
+                        Element main = elements.first();
+
+                        if (main != null) {
+
+                            List<Node> nodes = main.childNodes();
+
+                            Element current = new Element("p");
+
+                            List<String> tags = List.of("h1", "h2", "h3", "h4", "h5", "h6",
+                                    "p",
+                                    "img",
+                                    "div",
+                                    "strong",
+                                    "b");
+
+                            if (nodes.stream().anyMatch(node -> node instanceof TextNode)) {
+
+                                for (var node : nodes) {
+
+                                    if (node instanceof Element) {
+                                        Element e = (Element) node;
+
+                                        //                        all_tags.add(e.tagName() + (e.className().equals("") ? "" : "." + e.className()));
+                                    }
+                                    if (node != null) {
+                                        if (node instanceof Element) {
+
+                                            Element e = (Element) node;
+
+
+                                            if (e.hasClass("book") || e.hasClass("epigraph") || tags.contains(e.tagName())) {
+                                                newElements.push(current);
+                                                newElements.push(e);
+
+                                                current = new Element("p");
+
+                                            } else {
+                                                current.append(e.toString());
+                                            }
+
+                                        } else if (node instanceof TextNode) {
+                                            TextNode textNode = (TextNode) node;
+
+                                            current.append(textNode.text());
+                                        }
+
+                                    }
+                                }
+                            }
+                        } else {
+                            newElements.addAll(main.children().stream().toList());
+                        }
+
+                        return new Elements(newElements);
+                    } else return elements;
+                }))*/
+
+                .chapter()
+                .title("h1")
+                .selector("div.main > div.center")
+                .text("div.head > h1, div#selectable-content.text1 > div.otext > *")
+                .paragraph(paragraph.get())
+                .back()
+
+                .and()
+                .build();
+    }
+
     public static Parser createParserForHost(String host) {
+        System.out.println("Host: " + host);
         return switch (host) {
             case "loveread.ec" -> createLoveReadParser();
             case "coollib.in", "coollib.xyz", "coollib.net" -> createCoolLibParser();
@@ -996,6 +1195,7 @@ public class ParserFactory {
             case "flibusta.site" -> createFlibustaParser();
             case "militera.lib" -> createMiliteraParser();
             case "4italka.su" -> create4italkaParser();
+            case "ancientrome.ru" -> createAncientRome();
             default -> throw new IllegalArgumentException("Цей сайт не підтримується");
         };
 //        return parsers.stream().filter(p -> Objects.equals(p.getHost(), host)).findFirst().orElse(null);

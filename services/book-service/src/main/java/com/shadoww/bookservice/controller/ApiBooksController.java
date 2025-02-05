@@ -76,6 +76,7 @@ public class ApiBooksController {
         book.setTitle(form.getTitle());
 
         book.setDescription(form.getDescription());
+        book.setBookImageId(form.getImageId());
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -97,6 +98,7 @@ public class ApiBooksController {
         }
 
         book.setDescription(request.getDescription());
+        book.setBookImageId(request.getImageId());
 
 //        if (!request.isDescriptionEmpty()) {
 //            book.setDescription(request.getDescription());

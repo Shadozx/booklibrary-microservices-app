@@ -1,6 +1,7 @@
 package com.shadoww.bookservice.service.impl;
 
 //import com.shadoww.bookLibrary.dto.request.book.BookFilterRequest;
+
 import com.shadoww.api.dto.request.book.BookFilterRequest;
 import com.shadoww.api.exception.NotFoundException;
 import com.shadoww.api.exception.NullEntityReferenceException;
@@ -8,12 +9,13 @@ import com.shadoww.api.exception.ValueAlreadyExistsException;
 import com.shadoww.bookservice.model.Book;
 import com.shadoww.bookservice.repository.BookRepository;
 import com.shadoww.bookservice.service.interfaces.BookService;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Transactional(readOnly = true)
@@ -58,6 +60,13 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
+    public List<Book> getBySearchTitle(String title) {
+        // .filter(book -> filterRequest.getSearchText() == null || book.getTitle().toLowerCase().contains(filterRequest.getSearchText()))
+
+        return bookRepository.findByTitleContainsIgnoreCase(title);
+    }
+
+    @Override
     public boolean existsById(Long id) {
         return bookRepository.existsById(id);
     }
@@ -79,9 +88,9 @@ public class BookServiceImpl implements BookService {
 
         checkIsBookNull(updatedBook);
 
-        readById(updatedBook.getId());
+        Book oldBook = readById(updatedBook.getId());
 
-        if (existByTitle(updatedBook.getTitle())) {
+        if (!Objects.equals(oldBook.getTitle(), updatedBook.getTitle()) && existByTitle(updatedBook.getTitle())) {
             throw new ValueAlreadyExistsException("Книга з такою назвою вже існує");
         }
 
@@ -108,8 +117,15 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public List<Book> filterBooks(BookFilterRequest filterRequest) {
-        return getAll().stream()
-                .filter(book -> filterRequest.getSearchText() == null || book.getTitle().toLowerCase().contains(filterRequest.getSearchText()))
+        List<Book> books = new ArrayList<>();
+
+        if (filterRequest.getSearchText() != null && !filterRequest.getSearchText().equals("")) {
+            books.addAll(getBySearchTitle(filterRequest.getSearchText()));
+        } else {
+            books.addAll(getAll());
+        }
+
+        return books.stream()
                 .filter(book -> filterRequest.getFromAmount() == null || book.getChapters().size() >= filterRequest.getFromAmount())
                 .filter(book -> filterRequest.getToAmount() == null || book.getChapters().size() <= filterRequest.getToAmount())
                 .filter(book -> filterRequest.getFromYear() == null || book.getCreatedAt().getYear() >= filterRequest.getFromYear())

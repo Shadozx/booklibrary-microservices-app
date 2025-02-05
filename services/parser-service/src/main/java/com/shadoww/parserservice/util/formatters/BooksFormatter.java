@@ -1,7 +1,6 @@
 package com.shadoww.parserservice.util.formatters;
 
 
-import com.shadoww.api.exception.ValueAlreadyExistsException;
 //import com.shadoww.BookLibraryApp.model.Author;
 //import com.shadoww.BookLibraryApp.model.Book;
 //import com.shadoww.BookLibraryApp.model.BookSeries;
@@ -9,46 +8,46 @@ import com.shadoww.api.exception.ValueAlreadyExistsException;
 //import com.shadoww.BookLibraryApp.model.image.BookImage;
 //import com.shadoww.BookLibraryApp.model.image.ChapterImage;
 //import com.shadoww.api.service.interfaces.*;
+
+import com.shadoww.api.dto.request.ChapterRequest;
+import com.shadoww.api.dto.request.ImageRequest;
+import com.shadoww.api.dto.request.book.BookFilterRequest;
+import com.shadoww.api.dto.request.book.BookRequest;
+import com.shadoww.api.dto.response.BookResponse;
+import com.shadoww.api.dto.response.ChapterResponse;
+import com.shadoww.api.dto.response.ImageResponse;
+import com.shadoww.api.util.texformatters.TextFormatter;
+import com.shadoww.api.util.texformatters.elements.TextElements;
+import com.shadoww.api.util.texformatters.types.ElementType;
+import com.shadoww.parserservice.client.BookServiceClient;
+import com.shadoww.parserservice.client.ImageServiceClient;
 import com.shadoww.parserservice.util.instances.*;
 import com.shadoww.parserservice.util.parser.factories.ParserFactory;
 import com.shadoww.parserservice.util.parser.parsers.Parser;
 //import org.springframework.beans.factory.annotation.Autowired;
-import com.shadoww.parserservice.util.parser.factories.ParserFactory;
-import com.shadoww.parserservice.util.parser.parsers.Parser;
+import com.shadoww.parserservice.util.writers.BookFB2Writer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Component
 public class BooksFormatter {
 
-//    private final AuthorService authorService;
-//
-//    private final BookSeriesService bookSeriesService;
-//
-//    private final BookService bookService;
-//
-//    private final ImageService imageService;
-//
-//
-//    private final ChapterService chapterService;
-//
-//    @Autowired
-//    public BooksFormatter(AuthorService authorService,
-//                          BookSeriesService bookSeriesService,
-//                          BookService bookService,
-//                          ChapterService chapterService,
-//                          ImageService imageService) {
-//        this.authorService = authorService;
-//        this.bookSeriesService = bookSeriesService;
-//        this.bookService = bookService;
-//        this.chapterService = chapterService;
-//        this.imageService = imageService;
-//    }
+    private final BookServiceClient bookServiceClient;
+
+    private final ImageServiceClient imageServiceClient;
+
+    @Autowired
+    public BooksFormatter(BookServiceClient bookServiceClient, ImageServiceClient imageServiceClient) {
+        this.bookServiceClient = bookServiceClient;
+        this.imageServiceClient = imageServiceClient;
+    }
+
 
     public boolean format(String url) {
 
@@ -95,6 +94,104 @@ public class BooksFormatter {
         System.out.println("End parsing url");
 
         return books;
+    }
+
+    private ByteArrayOutputStream parseToFb2(BookInstance bookInstance, List<ChapterInstance> chapters) throws ParserConfigurationException {
+
+        BookFB2Writer writer = new BookFB2Writer();
+
+
+        BookFB2Writer.DescriptionBuilder.TitleInfoBuilder titleInfo = writer.description()
+                .titleInfo();
+
+        if (bookInstance.getTitle() != null) {
+            titleInfo.title(bookInstance.getTitle());
+        }
+        if (bookInstance.getDescription() != null) {
+            titleInfo.annotation(bookInstance.getDescription());
+        }
+
+        if (bookInstance.getBookImage() != null) {
+
+            titleInfo.coverImage(bookInstance.getBookImage().getData());
+
+
+        }
+        titleInfo.back()
+                .back();
+
+        var body = writer.body();
+        for (var chapter : chapters) {
+
+            var section = body.section();
+
+            if (!chapter.isTitleEmpty()) {
+                section.title(chapter.getTitle());
+            }
+
+//            int counterImages = 1;
+
+            if (!chapter.isTextEmpty()) {
+
+                List<ImageInstance> images = chapter.getImages();
+
+                TextElements elements = chapter.getTextElements();
+
+                for (var element : elements) {
+
+//                    System.out.println(element);
+                    if (element.hasType(ElementType.Paragraph)) {
+
+                        section.paragraph(element.attr("text"));
+                    } else if (element.hasType(ElementType.Image)) {
+
+
+                        Optional<ImageInstance> foundImage = images.stream().filter(i -> i.getFileName().equals(element.attr("filename"))).findFirst();
+
+                        if (foundImage.isPresent()) {
+                            ImageInstance image = foundImage.get();
+                            section.image(image.getFileName(), image.getData());
+                        }
+                    } else if (element.hasType(ElementType.Other)) {
+                        section.paragraph(element.attr("text"));
+                    }
+                }
+            }
+
+            body = section.and();
+        }
+
+        body.back();
+
+        System.out.println("End parsing url");
+
+
+        return writer.build();
+    }
+
+    public ByteArrayOutputStream parseToFb2(String url) throws IOException, ParserConfigurationException {
+
+        System.out.println("Start parsing url");
+
+        URL u = new URL(url);
+
+        Parser parser = ParserFactory.createParserForHost(u.getHost());
+
+        System.out.println(u.getHost());
+
+        if (parser.canParseBook(url)) {
+            BookInstance bookInstance = parseBookDetails(parser, url);
+
+            List<ChapterInstance> chapters = parser.parseChapters(url, bookInstance);
+
+            return parseToFb2(bookInstance, chapters);
+
+//            return new ByteArrayOutputStream();
+
+        } else {
+            throw new IllegalArgumentException("Цей парсер нічого не підтримує");
+        }
+
     }
 
     public List<BookInstance> parseAuthorBooks(Parser parser, String url) throws IOException {
@@ -211,33 +308,64 @@ public class BooksFormatter {
 //        }
 
         System.out.println("Start parse book details");
-        BookInstance book = parseBookDetails(parser, url);
+        BookInstance instance = parseBookDetails(parser, url);
+        ImageInstance bookImage = instance.getBookImage();
 
-        System.out.println(book);
+        System.out.println(instance);
         System.out.println("End parse book details");
+
+        if (existBookByTitle(instance.getTitle())) {
+
+            BookFilterRequest request = new BookFilterRequest();
+            request.setSearchText(instance.getTitle());
+
+            System.out.println("Start finding same books");
+            List<BookResponse> books = bookServiceClient.filterBooks(request);
+
+            System.out.println(books);
+            System.out.println("End finding same books");
+            if(!books.isEmpty()) {
+                return mapToInstance(books.get(0));
+            }
+
+        }
+
 //        if (existsBookByTitle(book.getTitle())) {
 //            return bookService.getByTitle(book.getTitle());
 //        }
 
-        ImageInstance bookImage = null;
-
-        if (parser.canParseBookImage()) {
-            bookImage = parser.parseBookImage(url);
-        }
 
 //        book = bookService.create(book);
 
+        BookResponse bookResponse = bookServiceClient.addBook(mapToRequest(instance));
+
         if (bookImage != null) {
 
-            book.setBookImage(bookImage);
+            bookImage.setFileName(bookResponse.getId() + ".png");
+            ImageRequest imageRequest = mapToRequest(bookImage);
+
+            System.out.println("Start adding book image");
+            ImageResponse imageResponse = imageServiceClient.addBookImage(bookResponse.getId(), imageRequest);
+
+            System.out.println(imageResponse);
+            System.out.println("End adding book image");
+
+            BookRequest bookRequest = mapToRequest(mapToInstance(bookResponse));
+            bookRequest.setImageId(imageResponse.getId());
+
+            System.out.println("Start updating book");
+            System.out.println(bookServiceClient.updateBook(bookResponse.getId(), bookRequest));
+
+            System.out.println("End updating book");
+//            instance.setBookImage(bookImage);
 //            bookImage.setBook(book);
 
 //            imageService.create(bookImage);
         }
 
-        parseBookChapters(parser, book, url);
+        parseBookChapters(parser, instance, bookResponse.getId(), url);
 
-        return book;
+        return instance;
     }
 
     public BookInstance parseBookDetails(Parser parser, String url) throws IOException {
@@ -254,24 +382,32 @@ public class BooksFormatter {
             throw new RuntimeException("Сталася помилка при парсингу книги");
         }
 
-//        saveChapters(parser, book, url);
-//        parseChapters(parser, book, url);
+        if (parser.canParseBookImage()) {
+
+            System.out.println("Cover image url:" + url);
+
+            book.setBookImage(parser.parseBookImage(url));
+
+        }
 
         return book;
     }
 
-    public List<ChapterInstance> parseBookChapters(Parser parser, BookInstance book, String url) throws IOException {
+    public List<ChapterInstance> parseBookChapters(Parser parser,
+                                                   BookInstance book,
+                                                   long bookId,
+                                                   String url) throws IOException {
 
         checkIsParserNull(parser);
 
-//        System.out.println("Start parse chapters");
+        System.out.println("Start parse chapters");
         List<ChapterInstance> chapters = parser.parseChapters(url, book);
 
 //        for (var c : chapters) {
 //            System.out.println(c);
 //        }
-//        System.out.println("End parse chapters");
-        List<ImageInstance> images = parser.getImages();
+        System.out.println("End parse chapters");
+//        List<ImageInstance> images = parser.getImages();
 
 
         if (chapters != null) {
@@ -283,15 +419,22 @@ public class BooksFormatter {
 
                 chapter.setChapterNumber(chapterNumber);
 
-//                System.out.println(chapter);
+//                chapter.setText(TextFormatter.parsePatterns(chapter.getText()).html());
 
-//                chapterService.create(chapter);
+                List<ImageInstance> chapterImages = chapter.getImages();
+
+                for(var i : chapterImages) {
+                    i.setFileName(bookId + "_" + UUID.randomUUID() + ".jpeg");
+                }
+
+                ChapterResponse response = bookServiceClient.addChapter(bookId, mapToRequest(chapter));
+
+                for (var i : chapterImages) {
+                    imageServiceClient.addChapterImage(bookId, response.getId(), mapToRequest(i));
+                }
+
                 chapterNumber++;
             }
-
-//            if (images != null && !images.isEmpty()) {
-//                imageService.createChapterImages(images);
-//            }
 
             return chapters;
         }
@@ -299,96 +442,78 @@ public class BooksFormatter {
         return null;
     }
 
-//    public List<ChapterInstance> parseBookChapters(BookInstance book) throws IOException {
-//        String url = book.getUploadedUrl();
-//        if (url == null || url.equals("")) {
-//            throw new IllegalArgumentException("Не існує посилання на оригінал книги!");
-//        }
-//
-//        return parseBookChapters(
-//                ParserFactory.createParserForHost(new URL(url).getHost()),
-//                book,
-//                book.getUploadedUrl());
-//    }
-
-//    public List<ChapterInstance> reParseBookChapters(BookInstance book) throws IOException {
-//
-//        String url = book.getUploadedUrl();
-//
-//        Parser parser = ParserFactory.createParserForHost(new URL(url).getHost());
-//
-//        List<ChapterInstance> chapters = parser.parseChapters(url, book);
-//
-//        if (chapters == null || chapters.isEmpty()) {
-//            throw new RuntimeException("Перепарсити книгу не вдалося");
-//        }
-//
-//        List<ImageInstance> images = parser.getImages();
-//
-////        chapterService.deleteByBook(book.getId());
-//
-//        book.setAmount(chapters.size());
-//
-//        System.out.println("Chapter size is "+ chapters.size());
-//        int i = 1;
-//        for (var c : chapters) {
-//            c.setBook(book);
-//            c.setChapterNumber(i++);
-//
-//            chapterService.create(c);
-//        }
-//
-//        bookService.update(book);
-//
-//        // якщо є фотографії
-//        if (images != null && !images.isEmpty()) {
-//
-//            imageService.deleteChaptersImages(chapterService.getBookChapters(book));
-//            imageService.createChapterImages(images);
-//        }
-//
-//        return chapters;
-//    }
-//    private boolean existsBookByUrl(String url) {
-//        if (bookService == null) {
-//            return false;
-//        }
-//
-//        return bookService.existsByUrl(url);
-//    }
-
-//    private boolean existsBookByTitle(String title) {
-//
-//        if (bookService == null) {
-//            return false;
-//        }
-//
-//        return bookService.existByTitle(title);
-//    }
-
-//    private boolean existsAuthorByUrl(String url) {
-//        if (authorService == null) {
-//            return false;
-//        }
-//
-//        return authorService.existsByUrl(url);
-//    }
-
-//    private boolean existsBookSeriesByUrl(String url) {
-//        if (bookSeriesService == null) {
-//            return false;
-//        }
-
-//        return bookSeriesService.existsByUrl(url);
-//    }
-
-//    private boolean existsUrl(String url) {
-//        return existsBookByUrl(url) || existsBookSeriesByUrl(url) || existsAuthorByUrl(url);
-//    }
+    private boolean existBookByTitle(String title) {
+        BookFilterRequest request = new BookFilterRequest();
+        request.setSearchText(title);
+        return !bookServiceClient.filterBooks(request).isEmpty();
+    }
 
     private void checkIsParserNull(Parser parser) {
         if (parser == null) {
             throw new IllegalArgumentException("Парсер для стягування книг не повинен бути пустим!");
         }
+    }
+
+    private BookRequest mapToRequest(BookInstance instance) {
+
+        BookRequest request = new BookRequest();
+
+        request.setTitle(instance.getTitle());
+        request.setDescription(instance.getDescription());
+//        request.setBookImage(instance.getBookImage().getFileName());
+
+        return request;
+    }
+
+    private ChapterRequest mapToRequest(ChapterInstance instance) {
+
+        ChapterRequest request = new ChapterRequest();
+
+        request.setTitle(instance.getTitle());
+        request.setText(instance.getTextElements().toPatternText());
+        request.setChapterNumber(instance.getChapterNumber());
+
+        return request;
+    }
+
+    private ImageRequest mapToRequest(ImageInstance instance) {
+
+        ImageRequest request = new ImageRequest();
+
+        request.setFileName(instance.getFileName());
+        request.setData(instance.getData());
+
+        return request;
+    }
+
+    private BookInstance mapToInstance(BookResponse response) {
+        BookInstance instance = new BookInstance();
+
+        instance.setTitle(response.getTitle());
+        instance.setDescription(response.getDescription());
+        instance.setAmount(response.getAmount());
+
+        return instance;
+    }
+
+    private ChapterInstance mapToInstance(ChapterResponse response) {
+
+        ChapterInstance instance = new ChapterInstance();
+
+        instance.setTitle(response.getTitle());
+//        instance.setText(response.getText());
+        instance.setTextElements(TextFormatter.parsePatterns(response.getText()));
+        instance.setChapterNumber(response.getChapterNumber());
+
+        return instance;
+    }
+
+    private ImageInstance mapToInstance(ImageResponse response) {
+
+        ImageInstance instance = new ImageInstance();
+
+        instance.setFileName(response.getFileName());
+
+        return instance;
     }
 }

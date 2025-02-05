@@ -14,7 +14,7 @@ public class BookMapperImpl implements BookMapper {
         BookRequest request = new BookRequest();
         request.setTitle(book.getTitle());
         request.setDescription(book.getDescription());
-        request.setBookImage(book.getBookImageId().toString());
+        request.setImageId(book.getBookImageId());
 
         return request;
     }
@@ -25,7 +25,7 @@ public class BookMapperImpl implements BookMapper {
 
         book.setTitle(request.getTitle());
         book.setDescription(request.getDescription());
-        book.setBookImageId(Long.parseLong(request.getBookImage()));
+        book.setBookImageId(request.getImageId());
 
         return book;
     }
@@ -38,7 +38,7 @@ public class BookMapperImpl implements BookMapper {
                 book.getTitle(),
                 book.getDescription(),
                 book.getAmount(),
-                book.getBookImageId() != null ? book.getBookImageId().toString() : null);
+                book.getBookImageId());
 //                book.getUploadedUrl());
     }
 
@@ -48,7 +48,7 @@ public class BookMapperImpl implements BookMapper {
 
         book.setTitle(response.getTitle());
         book.setDescription(response.getDescription());
-        book.setBookImageId(Long.parseLong(response.getBookImageUrl()));
+        book.setBookImageId(response.getImageId());
 
         return book;
     }

@@ -2,6 +2,7 @@ package com.shadoww.api.util.texformatters.elements;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shadoww.api.util.texformatters.types.ElementType;
+import lombok.Getter;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;

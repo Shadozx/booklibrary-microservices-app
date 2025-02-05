@@ -16,9 +16,15 @@ public class ImageInstance {
 
 
     public ImageInstance(ImageInstance instance) {
+        this.fileName = instance.getFileName();
         this.data = instance.getData();
         this.contentType = instance.getContentType();
     }
 
-
+    @Override
+    public String toString() {
+        return "ImageInstance{" +
+                "fileName='" + fileName + '\'' +
+                '}';
+    }
 }

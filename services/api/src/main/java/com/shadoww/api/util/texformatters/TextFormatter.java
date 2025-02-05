@@ -7,10 +7,8 @@ import com.shadoww.api.util.texformatters.elements.TextElements;
 import com.shadoww.api.util.texformatters.types.ElementType;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +17,7 @@ import java.util.regex.Pattern;
 
 public class TextFormatter {
 
+    private static final String PATTERN_TEXT_REGEX = "\\[(?<tag>\\w+)(, attrs=\"(?<attrs>.*)\")?\\]";
     private TextFormatter() {
     }
 
@@ -30,11 +29,6 @@ public class TextFormatter {
 
         return formatToPatternsText(html);
     }
-
-//    public static TextElements parseOne() {
-//
-//        return null;
-//    }
 
 
     /**
@@ -49,9 +43,8 @@ public class TextFormatter {
      * Для перегляду тексту в формі html
      */
     public static TextElements parsePatterns(String patternText) {
-        String reg = "\\[(?<tag>\\w+)(, attrs=\"(?<attrs>.*)\")?\\]";
 
-        Matcher matcher = Pattern.compile(reg).matcher(patternText);
+        Matcher matcher = Pattern.compile(PATTERN_TEXT_REGEX).matcher(patternText);
 
         TextElements elements = new TextElements();
         while (matcher.find()) {
@@ -85,9 +78,8 @@ public class TextFormatter {
      * Для оцінювання елементів
      **/
     public static TextElements parsePatternText(String patternText) {
-        String reg = "\\[(?<tag>\\w+)(, attrs=\"(?<attrs>.*)\")?\\]";
 
-        Matcher matcher = Pattern.compile(reg).matcher(patternText);
+        Matcher matcher = Pattern.compile(PATTERN_TEXT_REGEX).matcher(patternText);
 
         TextElements elements = new TextElements();
         while (matcher.find()) {
@@ -109,24 +101,10 @@ public class TextFormatter {
 
             element = new TextElement(type, attributes);
 
-
-//            String  attributes = attrs.substring(attrs.indexOf("\"") + 1, attrs.lastIndexOf("\""));
-
-//            System.out.println(attributes);
-
             elements.add(element);
         }
         return elements;
     }
-
-
-    // щоб поміняти паттерн текст на html
-//    public static List<Chapter> parsePatternText(List<Chapter> chapters) {
-//        for (var c : chapters) {
-//            c.setText(parsePatterns(c.getText()).html());
-//        }
-//        return chapters;
-//    }
 
     private static Map<String, String> getAttributes(String attributes) {
         try {
@@ -150,7 +128,7 @@ public class TextFormatter {
     }
 
     /**
-     * З хтмл текст в паттерновий текст
+     * HTML текст в паттерновий текст
      */
     private static TextElements formatToPatternsText(String html) {
 //        Matcher matcher = Pattern.compile("<(?<tag>\\w+) (src=\"(?<filename>.+?)\")? .*?>((?<text>.+?)</(\\k<tag>)>)?").matcher(html);
@@ -215,79 +193,31 @@ public class TextFormatter {
         return elements;
     }
 
-
-    private static String formatToPatterns(String html) {
-//        Matcher matcher = Pattern.compile("<(?<tag>\\w+) (src=\"(?<filename>.+?)\")? .*?>((?<text>.+?)</(\\k<tag>)>)?").matcher(html);
-
-        Elements els = Jsoup.parse(html).select("p, img");
-
-        List<String> patterns = new ArrayList<>();
-        for (Element el : els) {
-            String flags = el.className();
-
-            String element = "";
-            if (el.tagName().equals("p")) {
-                element = "[text=\"" + el.html() + "\""; //+ "\"]");
-            }
-            if (el.tagName().equals("img")) {
-                String filename = null; //Image.getFileNameFromImg(el.attr("src"));
-
-//                System.out.println(filename);
-                element = "[photo=\"" + el.attr("src") + "\""; //+ "\"]");
-            }
-
-            if (element != "" && flags != "") element += ", flags=\"" + flags + "\"]";
-
-            if (element != "" && flags == "") element += "]";
-
-            if (element != "") patterns.add(element);
-        }
-
-        return String.join("\n", patterns);
-    }
-
-
     private static TextElement formatPatternText(Element el, ElementType type) {
-//        Matcher matcher = Pattern.compile("<(?<tag>\\w+) (src=\"(?<filename>.+?)\")? .*?>((?<text>.+?)</(\\k<tag>)>)?").matcher(html);
 
         switch (type) {
-
             case Paragraph -> {
                 TextElement element = new TextElement(ElementType.Paragraph);
-
-                if (!el.html().equals("")) {
-//                    element.addAttribute("text", el.html());
 
                     element.text(el.html());
 
                     return element;
-
-                } else return null;
-
-
             }
             case Image -> {
                 TextElement element = new TextElement(ElementType.Image);
                 element.addAttribute("filename", el.attr("src"));
 
                 return element;
-//            "[photo=\"" + el.attr("src") + "\"]";
-
             }
             default -> {
                 TextElement element = new TextElement(ElementType.Other);
 
                 if (!el.html().equals("")) {
-//                    element.addAttribute("text", el.toString());
                     element.text(el.toString());
-
-//                "[other=\"" + el.toString() + "\"]" :"";
-                } else element.text("");
+                }
 
                 return element;
             }
         }
-
     }
-
 }

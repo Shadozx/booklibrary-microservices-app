@@ -14,6 +14,7 @@ public interface BookService extends CrudService<Book, Long> {
 //    Book getByUrl(String url);
 
     Book getByTitle(String title);
+    List<Book> getBySearchTitle(String title);
 
     boolean existByTitle(String title);
 

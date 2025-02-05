@@ -43,9 +43,9 @@ public class SecurityConfiguration {
                 .headers(httpSecurityHeadersConfigurer -> {
                     httpSecurityHeadersConfigurer.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable);
                 })
-                .authorizeHttpRequests(a->{
-                    a.anyRequest().hasRole("USER");
-                })
+//                .authorizeHttpRequests(a->{
+//                    a.anyRequest().hasRole("USER");
+//                })
                 .cors(cors -> cors.configurationSource(request -> {
                     var corsConfiguration = new CorsConfiguration();
                     corsConfiguration.setAllowedOriginPatterns(List.of("*"));
