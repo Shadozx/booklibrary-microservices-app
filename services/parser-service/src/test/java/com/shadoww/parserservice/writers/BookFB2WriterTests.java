@@ -1,28 +1,20 @@
 package com.shadoww.parserservice.writers;
 
 import com.shadoww.api.util.texformatters.TextFormatter;
-import com.shadoww.api.util.texformatters.elements.TextElement;
 import com.shadoww.api.util.texformatters.elements.TextElements;
 import com.shadoww.api.util.texformatters.types.ElementType;
 import com.shadoww.parserservice.util.parser.parsers.ParserHelper;
 import com.shadoww.parserservice.util.writers.BookFB2Writer;
-import org.apache.commons.lang.CharEncoding;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.jsoup.Jsoup;
-import org.jsoup.helper.W3CDom;
-import org.jsoup.nodes.Entities;
-import org.jsoup.parser.Parser;
 import org.jsoup.select.Elements;
 import org.junit.jupiter.api.Test;
-import org.junit.platform.commons.util.StringUtils;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.w3c.dom.Element;
 
 import org.w3c.dom.Document;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
@@ -147,7 +139,7 @@ public class BookFB2WriterTests {
 
     @Test
     public void testTextFormatter() {
-        System.out.println(TextFormatter.parse(new org.jsoup.nodes.Element("p"), ElementType.Paragraph));
+        System.out.println(TextFormatter.parseToPattern(new org.jsoup.nodes.Element("p"), ElementType.Paragraph));
     }
     @Test
     public void testParseHtmlElement() {

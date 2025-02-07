@@ -19,8 +19,8 @@ import com.shadoww.api.dto.response.ImageResponse;
 import com.shadoww.api.util.texformatters.TextFormatter;
 import com.shadoww.api.util.texformatters.elements.TextElements;
 import com.shadoww.api.util.texformatters.types.ElementType;
-import com.shadoww.parserservice.client.BookServiceClient;
-import com.shadoww.parserservice.client.ImageServiceClient;
+import com.shadoww.parserservice.client.LibraryServiceClient;
+import com.shadoww.parserservice.client.MediaServiceClient;
 import com.shadoww.parserservice.util.instances.*;
 import com.shadoww.parserservice.util.parser.factories.ParserFactory;
 import com.shadoww.parserservice.util.parser.parsers.Parser;
@@ -38,14 +38,14 @@ import java.util.*;
 @Component
 public class BooksFormatter {
 
-    private final BookServiceClient bookServiceClient;
+    private final LibraryServiceClient libraryServiceClient;
 
-    private final ImageServiceClient imageServiceClient;
+    private final MediaServiceClient mediaServiceClient;
 
     @Autowired
-    public BooksFormatter(BookServiceClient bookServiceClient, ImageServiceClient imageServiceClient) {
-        this.bookServiceClient = bookServiceClient;
-        this.imageServiceClient = imageServiceClient;
+    public BooksFormatter(LibraryServiceClient libraryServiceClient, MediaServiceClient mediaServiceClient) {
+        this.libraryServiceClient = libraryServiceClient;
+        this.mediaServiceClient = mediaServiceClient;
     }
 
 
@@ -320,7 +320,7 @@ public class BooksFormatter {
             request.setSearchText(instance.getTitle());
 
             System.out.println("Start finding same books");
-            List<BookResponse> books = bookServiceClient.filterBooks(request);
+            List<BookResponse> books = libraryServiceClient.filterBooks(request);
 
             System.out.println(books);
             System.out.println("End finding same books");
@@ -337,7 +337,7 @@ public class BooksFormatter {
 
 //        book = bookService.create(book);
 
-        BookResponse bookResponse = bookServiceClient.addBook(mapToRequest(instance));
+        BookResponse bookResponse = libraryServiceClient.addBook(mapToRequest(instance));
 
         if (bookImage != null) {
 
@@ -345,7 +345,7 @@ public class BooksFormatter {
             ImageRequest imageRequest = mapToRequest(bookImage);
 
             System.out.println("Start adding book image");
-            ImageResponse imageResponse = imageServiceClient.addBookImage(bookResponse.getId(), imageRequest);
+            ImageResponse imageResponse = mediaServiceClient.addBookImage(bookResponse.getId(), imageRequest);
 
             System.out.println(imageResponse);
             System.out.println("End adding book image");
@@ -354,7 +354,7 @@ public class BooksFormatter {
             bookRequest.setImageId(imageResponse.getId());
 
             System.out.println("Start updating book");
-            System.out.println(bookServiceClient.updateBook(bookResponse.getId(), bookRequest));
+            System.out.println(libraryServiceClient.updateBook(bookResponse.getId(), bookRequest));
 
             System.out.println("End updating book");
 //            instance.setBookImage(bookImage);
@@ -427,10 +427,10 @@ public class BooksFormatter {
                     i.setFileName(bookId + "_" + UUID.randomUUID() + ".jpeg");
                 }
 
-                ChapterResponse response = bookServiceClient.addChapter(bookId, mapToRequest(chapter));
+                ChapterResponse response = libraryServiceClient.addChapter(bookId, mapToRequest(chapter));
 
                 for (var i : chapterImages) {
-                    imageServiceClient.addChapterImage(bookId, response.getId(), mapToRequest(i));
+                    mediaServiceClient.addChapterImage(bookId, response.getId(), mapToRequest(i));
                 }
 
                 chapterNumber++;
@@ -445,7 +445,7 @@ public class BooksFormatter {
     private boolean existBookByTitle(String title) {
         BookFilterRequest request = new BookFilterRequest();
         request.setSearchText(title);
-        return !bookServiceClient.filterBooks(request).isEmpty();
+        return !libraryServiceClient.filterBooks(request).isEmpty();
     }
 
     private void checkIsParserNull(Parser parser) {
@@ -470,8 +470,10 @@ public class BooksFormatter {
         ChapterRequest request = new ChapterRequest();
 
         request.setTitle(instance.getTitle());
-        request.setText(instance.getTextElements().toPatternText());
+        request.setPatternText(instance.getTextElements().toPatternText());
         request.setChapterNumber(instance.getChapterNumber());
+
+        System.out.println(request);
 
         return request;
     }

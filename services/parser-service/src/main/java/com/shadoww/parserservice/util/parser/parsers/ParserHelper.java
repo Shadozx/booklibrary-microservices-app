@@ -18,7 +18,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
@@ -120,7 +119,7 @@ public class ParserHelper {
     }
 
     public static TextElement formatText(Element element, ElementType type) {
-        return TextFormatter.parse(element, type);
+        return TextFormatter.parseToPattern(element, type);
     }
 
 }

@@ -36,7 +36,7 @@ spring:
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://eureka-server:8761/eureka/
+      defaultZone: http://discovery-server:8761/eureka/
 
 logging:
   level:

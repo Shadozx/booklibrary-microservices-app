@@ -2,8 +2,7 @@ package com.shadoww.parserservice.controller;
 
 import com.shadoww.api.dto.request.ImageRequest;
 import com.shadoww.api.dto.request.book.ParseLinkRequest;
-import com.shadoww.api.dto.response.ImageResponse;
-import com.shadoww.parserservice.client.ImageServiceClient;
+import com.shadoww.parserservice.client.MediaServiceClient;
 import com.shadoww.parserservice.util.formatters.BooksFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
@@ -16,9 +15,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.List;
-
-import org.springframework.mock.web.MockMultipartFile;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -27,13 +23,13 @@ import javax.xml.parsers.ParserConfigurationException;
 @RequestMapping("/api/parsers")
 public class ApiParsersController {
 
-    private final ImageServiceClient imageServiceClient;
+    private final MediaServiceClient mediaServiceClient;
 
     private final BooksFormatter booksFormatter;
 
     @Autowired
-    public ApiParsersController(ImageServiceClient imageServiceClient, BooksFormatter booksFormatter) {
-        this.imageServiceClient = imageServiceClient;
+    public ApiParsersController(MediaServiceClient mediaServiceClient, BooksFormatter booksFormatter) {
+        this.mediaServiceClient = mediaServiceClient;
         this.booksFormatter = booksFormatter;
     }
 
@@ -139,7 +135,7 @@ public class ApiParsersController {
     @GetMapping("/get-photo")
     public ResponseEntity<?> getPhotoImageService(@RequestParam(value = "iD", defaultValue = "20") long iD) {
 
-        imageServiceClient.getImageById(iD);
+        mediaServiceClient.getImageById(iD);
 
         return ResponseEntity.ok().build();
     }

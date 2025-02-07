@@ -1,12 +1,9 @@
 package com.shadoww.parserservice;
 
 
-import com.shadoww.parserservice.client.BookServiceClient;
-import com.shadoww.parserservice.client.ImageServiceClient;
+import com.shadoww.parserservice.client.LibraryServiceClient;
+import com.shadoww.parserservice.client.MediaServiceClient;
 import com.shadoww.parserservice.util.formatters.BooksFormatter;
-import com.shadoww.parserservice.util.instances.BookInstance;
-import com.shadoww.parserservice.util.instances.ChapterInstance;
-import com.shadoww.parserservice.util.parser.factories.ParserFactory;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -25,17 +22,16 @@ import java.io.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
-import java.util.List;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class BooksFormatterParseFb2Tests {
 
     @Mock
-    BookServiceClient bookServiceClient;
+    LibraryServiceClient libraryServiceClient;
 
     @Mock
-    ImageServiceClient imageServiceClient;
+    MediaServiceClient mediaServiceClient;
 
     @InjectMocks
     BooksFormatter booksFormatter;
@@ -43,7 +39,8 @@ public class BooksFormatterParseFb2Tests {
     @Test
     public void testParseFb2Book() throws IOException, ParserConfigurationException {
 //        String url = "http://loveread.ec/view_global.php?id=6972";
-        String url = "http://loveread.ec/view_global.php?id=67498";
+        String url = "https://coollib.net/b/489485-lutsiy-anney-seneka-moralni-listi-do-lutsiliya";
+//        String url = "http://loveread.ec/view_global.php?id=67498";
 //        String url = "https://coollib.net/b/489485-lutsiy-anney-seneka-moralni-listi-do-lutsiliya";
 //        String url = "http://flibusta.site/b/436734";
 //        String url = "https://ancientrome.ru/antlitr/cicero/index-phil.htm";

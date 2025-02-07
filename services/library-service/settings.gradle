@@ -1,0 +1,4 @@
+rootProject.name = 'library-service'
+
+include ':services:api'
+include ':services:exception-handler'

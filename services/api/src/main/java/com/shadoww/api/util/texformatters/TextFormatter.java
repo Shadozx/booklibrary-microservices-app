@@ -25,7 +25,7 @@ public class TextFormatter {
      * То що приходить з html редактора перетворюється в паттерн елементів
      **/
 
-    public static TextElements parse(String html) {
+    public static TextElements parseHtml(String html) {
 
         return formatToPatternsText(html);
     }
@@ -34,7 +34,7 @@ public class TextFormatter {
     /**
      * Використовується в парсерах для парсингу по елементно
      */
-    public static TextElement parse(Element element, ElementType type) {
+    public static TextElement parseToPattern(Element element, ElementType type) {
         return formatPatternText(element, type);
     }
 

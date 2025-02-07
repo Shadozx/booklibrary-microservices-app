@@ -4,8 +4,8 @@ services:
 
   # eureka server container settings
 
-  eureka-server:
-    build: eureka-server/
+  discovery-server:
+    build: discovery-server/
     ports:
       - "8761:8761"
     healthcheck:
@@ -28,7 +28,7 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      eureka-server:
+      discovery-server:
         condition: service_healthy
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1" ]
@@ -45,25 +45,49 @@ services:
 
   # gateway server settings
 
-#  gateway-server:
-#    build: gateway-server/
-#    ports:
-#      - "8888:8888"
-#    depends_on:
-#      config-server:
-#        condition: service_healthy
-#    healthcheck:
-#      test: [ "CMD-SHELL", "curl -f http://localhost:8888/actuator/health || exit 1" ]
-#      interval: 30s
-#      timeout: 10s
-#      retries: 5
-#      start_period: 50s
-#    deploy:
-#      resources:
-#        limits:
-#          memory: 512M
-#    networks:
-#      - book_library_network
+  #  gateway-server:
+  #    build: gateway-server/
+  #    ports:
+  #      - "8888:8888"
+  #    depends_on:
+  #      config-server:
+  #        condition: service_healthy
+  #    healthcheck:
+  #      test: [ "CMD-SHELL", "curl -f http://localhost:8888/actuator/health || exit 1" ]
+  #      interval: 30s
+  #      timeout: 10s
+  #      retries: 5
+  #      start_period: 50s
+  #    deploy:
+  #      resources:
+  #        limits:
+  #          memory: 512M
+  #    networks:
+  #      - book_library_network
+
+  # parser settings
+
+  parser-service:
+    build: services/parser-service/
+    ports:
+      - "9000:9000"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker-dev
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:9000/actuator/health || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - book_library_network
 
   # auth service settings
 
@@ -87,14 +111,14 @@ services:
       config-server:
         condition: service_healthy
     ports:
-      - "5430:5432"
+      - "5400:5432"
     networks:
       - book_library_network
 
   auth-service:
     build: services/auth-service/
     ports:
-      - "9075:9075"
+      - "9100:9100"
     depends_on:
       auth-service-db:
         condition: service_healthy
@@ -105,7 +129,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker-dev
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:9075/actuator/health || exit 1" ]
+      test: [ "CMD-SHELL", "curl -f http://localhost:9100/actuator/health || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -113,58 +137,12 @@ services:
     networks:
       - book_library_network
 
-  # author service containers settings
-
-  #  author-service-db:
-  #    image: postgres:latest
-  #    environment:
-  #      POSTGRES_DB: book_library_author_service_db
-  #      POSTGRES_USER: postgres
-  #      POSTGRES_PASSWORD: postgres
-  #    deploy:
-  #      resources:
-  #        limits:
-  #          memory: 512M
-  #    healthcheck:
-  #      test: [ "CMD-SHELL", "pg_isready -U postgres -d book_library_author_service_db" ]
-  #      interval: 30s
-  #      timeout: 10s
-  #      retries: 5
-  #      start_period: 30s
-  #    depends_on:
-  #      config-server:
-  #        condition: service_healthy
-  #    ports:
-  #      - "5431:5432"
-  #    networks:
-  #      - book_library_network
-  #
-  #  author-service:
-  #    build: services/author-service/
-  #    ports:
-  #      - "9050:9050"
-  #    depends_on:
-  #      author-service-db:
-  #        condition: service_healthy
-  #    deploy:
-  #      resources:
-  #        limits:
-  #          memory: 512M
-  #    healthcheck:
-  #      test: [ "CMD-SHELL", "curl -f http://localhost:9050/actuator/health || exit 1" ]
-  #      interval: 30s
-  #      timeout: 10s
-  #      retries: 5
-  #      start_period: 30s
-  #    networks:
-  #      - book_library_network
-
   # book service containers settings
 
-  book-service-db:
+  library-service-db:
     image: postgres:latest
     environment:
-      POSTGRES_DB: book_library_book_service_db
+      POSTGRES_DB: book_library_library_service_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     deploy:
@@ -172,7 +150,7 @@ services:
         limits:
           memory: 512M
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres -d book_library_book_service_db" ]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d book_library_library_service_db" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -181,26 +159,25 @@ services:
       config-server:
         condition: service_healthy
     ports:
-      - "5433:5432"
+      - "5450:5432"
     networks:
       - book_library_network
 
-  book-service:
-    build: services/book-service/
+  library-service:
+    build: services/library-service/
     ports:
-      - "9055:9055"
+      - "9200:9200"
     depends_on:
-      book-service-db:
+      library-service-db:
         condition: service_healthy
     deploy:
       resources:
         limits:
           memory: 512M
-
     environment:
       SPRING_PROFILES_ACTIVE: docker-dev
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:9055/actuator/health || exit 1" ]
+      test: [ "CMD-SHELL", "curl -f http://localhost:9200/actuator/health || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -208,125 +185,147 @@ services:
     networks:
       - book_library_network
 
-  # book catalog service containers settings
-
-  #  bookcatalog-service-db:
-  #    image: postgres:latest
-  #    environment:
-  #      POSTGRES_DB: book_library_bookcatalog_service_db
-  #      POSTGRES_USER: postgres
-  #      POSTGRES_PASSWORD: postgres
-  #    deploy:
-  #      resources:
-  #        limits:
-  #          memory: 512M
-  #    healthcheck:
-  #      test: [ "CMD-SHELL", "pg_isready -U postgres -d book_library_bookcatalog_service_db" ]
-  #      interval: 30s
-  #      timeout: 10s
-  #      retries: 5
-  #      start_period: 30s
-  #    depends_on:
-  #      config-server:
-  #        condition: service_healthy
-  #    ports:
-  #      - "5434:5432"
-  #    networks:
-  #      - book_library_network
-  #
-  #  bookcatalog-service:
-  #    build: services/bookcatalog-service/
-  #    ports:
-  #      - "9060:9060"
-  #    depends_on:
-  #      bookcatalog-service-db:
-  #        condition: service_healthy
-  #    deploy:
-  #      resources:
-  #        limits:
-  #          memory: 512M
-  #    healthcheck:
-  #      test: [ "CMD-SHELL", "curl -f http://localhost:9060/actuator/health || exit 1" ]
-  #      interval: 30s
-  #      timeout: 10s
-  #      retries: 5
-  #      start_period: 30s
-  #    networks:
-  #      - book_library_network
 
   # image service settings
 
-#  image-service-db:
-#    image: postgres:latest
-#    environment:
-#      POSTGRES_DB: book_library_image_service_db
-#      POSTGRES_USER: postgres
-#      POSTGRES_PASSWORD: postgres
-#    deploy:
-#      resources:
-#        limits:
-#          memory: 512M
-#    healthcheck:
-#      test: [ "CMD-SHELL", "pg_isready -U postgres -d book_library_book_service_db" ]
-#      interval: 30s
-#      timeout: 10s
-#      retries: 5
-#      start_period: 30s
-#    depends_on:
-#      config-server:
-#        condition: service_healthy
-#    ports:
-#      - "5435:5432"
-#    networks:
-#      - book_library_network
-#
-#  image-service:
-#    build: services/image-service/
-#    ports:
-#      - "9065:9065"
-#    environment:
-#      SPRING_PROFILES_ACTIVE: docker-dev
-#    depends_on:
-#      image-service-db:
-#        condition: service_healthy
-#    deploy:
-#      resources:
-#        limits:
-#          memory: 512M
-#    healthcheck:
-#      test: [ "CMD-SHELL", "curl -f http://localhost:9065/actuator/health || exit 1" ]
-#      interval: 30s
-#      timeout: 10s
-#      retries: 5
-#      start_period: 30s
-#    networks:
-#      - book_library_network
-
-  # parser settings
-
-  parser-service:
-    build: services/parser-service/
-    ports:
-      - "9000:9000"
+  media-service-db:
+    image: postgres:latest
     environment:
-      SPRING_PROFILES_ACTIVE: docker-dev
-    depends_on:
-      config-server:
-        condition: service_healthy
-#      image-service:
-#        condition: service_healthy
+      POSTGRES_DB: book_library_media_service_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     deploy:
       resources:
         limits:
           memory: 512M
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:9000/actuator/health || exit 1" ]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d book_library_media_service_db" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      config-server:
+        condition: service_healthy
+    ports:
+      - "5500:5432"
+    networks:
+      - book_library_network
+
+  media-service:
+    build: services/media-service/
+    ports:
+      - "9300:9300"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker-dev
+    depends_on:
+      feedback-service-db:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:9300/actuator/health || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 30s
     networks:
       - book_library_network
+
+  feedback-service-db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: book_library_feedback_service_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d book_library_feedback_service_db" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      config-server:
+        condition: service_healthy
+    ports:
+      - "5550:5432"
+    networks:
+      - book_library_network
+
+  feedback-service:
+    build: services/feedback-service/
+    ports:
+      - "9400:9400"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker-dev
+    depends_on:
+      feedback-service-db:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:9400/actuator/health || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - book_library_network
+
+  userprofile-service-db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: book_library_userprofile_service_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d book_library_userprofile_service_db" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      config-server:
+        condition: service_healthy
+    ports:
+      - "5600:5432"
+    networks:
+      - book_library_network
+
+  userprofile-service:
+    build: services/userprofile-service/
+    ports:
+      - "9500:9500"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker-dev
+    depends_on:
+      userprofile-service-db:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:9500/actuator/health || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - book_library_network
+
 
 # network settings
 networks:
@@ -334,7 +333,7 @@ networks:
     driver: bridge
 
 
-# commands to build a service './gradlew :services:book-service:build' or build all services ./gradlew build
+# commands to build a service './gradlew :services:library-service:build' or build all services ./gradlew build
 # to run system 'docker-compose up -d'
-# stop and delete all containers and images 'docker-compose down -v --rmi all'
+# stop and delete all containers and images 'docker-compose down --rmi all'
 # show containers docker ps

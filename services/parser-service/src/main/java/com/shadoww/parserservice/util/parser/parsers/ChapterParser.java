@@ -172,7 +172,6 @@ public class ChapterParser {
 
                 for (Element el : elements) {
 
-                    System.out.println(el.tagName().trim());
                     if (chapterSelector.getTitles().contains(el.tagName() + (!el.className().equals("") ? ("." + el.className()) : ""))) {
 
                         TextConvector textConvector = chapterSelector.getTextConvector();
