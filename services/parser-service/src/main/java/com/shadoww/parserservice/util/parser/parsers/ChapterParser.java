@@ -4,6 +4,7 @@ package com.shadoww.parserservice.util.parser.parsers;
 //import com.shadoww.BookLibraryApp.model.Chapter;
 //import com.shadoww.BookLibraryApp.model.image.ChapterImage;
 
+import com.shadoww.api.util.texformatters.TextFormatter;
 import com.shadoww.parserservice.util.instances.BookInstance;
 import com.shadoww.parserservice.util.instances.ChapterInstance;
 import com.shadoww.parserservice.util.instances.ImageInstance;
@@ -336,7 +337,15 @@ public class ChapterParser {
 
                     prev.addChapterInstance(current);
                     stack.push(prev);
-                } else stack.push(current);
+                } else if(current.isTextEmpty()) {
+                    ChapterInstance prev = !stack.isEmpty() ? stack.pop() : new ChapterInstance();
+
+                    prev.addTextElement(TextFormatter.parseToPattern(new Element("b").text(current.getTitle()), ElementType.Other));
+
+                    stack.push(prev);
+                }
+
+                else stack.push(current);
             }
         }
 

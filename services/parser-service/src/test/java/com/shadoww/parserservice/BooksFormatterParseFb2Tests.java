@@ -39,7 +39,8 @@ public class BooksFormatterParseFb2Tests {
     @Test
     public void testParseFb2Book() throws IOException, ParserConfigurationException {
 //        String url = "http://loveread.ec/view_global.php?id=6972";
-        String url = "https://coollib.net/b/489485-lutsiy-anney-seneka-moralni-listi-do-lutsiliya";
+//        String url = "https://coollib.net/b/489485-lutsiy-anney-seneka-moralni-listi-do-lutsiliya";
+        String url = "http://flibusta.site/b/792970";
 //        String url = "http://loveread.ec/view_global.php?id=67498";
 //        String url = "https://coollib.net/b/489485-lutsiy-anney-seneka-moralni-listi-do-lutsiliya";
 //        String url = "http://flibusta.site/b/436734";
@@ -52,7 +53,8 @@ public class BooksFormatterParseFb2Tests {
 
 //        System.out.println("test-%s".formatted(currentDate));
 //        writeBookInstance("ФИЛОСОФСКИЕ_ТРАКТАТЫ_(PHILOSOPHIA).fb2", booksFormatter.parseToFb2(url));
-        writeBookInstance("test-book-%s.fb2".formatted(currentDate), booksFormatter.parseToFb2(url));
+//        writeBookInstance("test-book-%s.fb2".formatted(currentDate), booksFormatter.parseToFb2(url));
+        writeBookInstance("osobisti_kordoni.fb2", booksFormatter.parseToFb2(url));
 //        booksFormatter.parseToFb2(url);
     }
 

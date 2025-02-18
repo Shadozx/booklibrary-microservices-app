@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -31,12 +32,20 @@ public class Author {
     @Column(columnDefinition = "varchar")
     private String biography;
 
-    /**
-     * Звідки був взятий автор (силка) а якщо пусто то значить власноруч було додано
-     **/
-//    @Column(name = "uploaded_url")
-//    private String uploadedUrl;
 
+    /**
+     * Книги, написані автором
+     **/
+    @ManyToMany(
+            fetch = FetchType.LAZY,
+            mappedBy = "authors",
+            cascade = {
+                    jakarta.persistence.CascadeType.DETACH,
+                    jakarta.persistence.CascadeType.MERGE,
+                    jakarta.persistence.CascadeType.PERSIST,
+                    jakarta.persistence.CascadeType.REFRESH
+            })
+    private List<Book> books;
 
     @Override
     public boolean equals(Object o) {

@@ -42,4 +42,5 @@ public interface MediaServiceClient {
 
     @DeleteMapping("/api/media/{imageId}")
     ResponseEntity<?> deleteImageById(@PathVariable("imageId") long imageId);
+
 }

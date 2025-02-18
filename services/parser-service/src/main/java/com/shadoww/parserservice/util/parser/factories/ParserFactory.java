@@ -125,7 +125,7 @@ public class ParserFactory {
                 .build();
     }
 
-    public static Parser createFlibustaParser() {
+    public static Parser createFlibustaSiteParser() {
         return new ParserBuilder()
                 .host("flibusta.site")
 
@@ -187,7 +187,7 @@ public class ParserFactory {
                 .chapter()
                 .selector("#main")
                 .text(".book, .poem, center img, p img")
-                .title("h3.book")
+                .title("h2, h3, h3.book")
                 .textConvector((chapterInstances, el) -> {
                     ChapterInstance prev = !chapterInstances.isEmpty() ? chapterInstances.pop() : new ChapterInstance();
                     if (el.text().matches("\\d+")) {
@@ -215,6 +215,144 @@ public class ParserFactory {
 
                     }
                 })
+                .back()
+
+                .and()
+                .build();
+    }
+
+    public static Parser createFlibustaSuParser() {
+        AtomicReference<Paragraph> paragraph = new AtomicReference<>();
+
+        paragraph.set((el, current, chapterImages, book) -> {
+            Paragraph p = paragraph.get();
+            if (el.tagName().equals("p") && el.hasClass("strong")) {
+
+                if (!el.children().isEmpty()) {
+                    return new TextElements(List.of(ParserHelper.formatText(el, ElementType.Paragraph)));
+                } else {
+                    Element element = el.tagName("b").removeAttr("class");
+
+                    TextElement e = ParserHelper.formatText(element, ElementType.Other);
+                    return new TextElements(List.of(e));
+
+                }
+            }
+
+            else if (el.hasClass("em")) {
+                return new TextElements(List.of(ParserHelper.formatText(el.tagName("i"), ElementType.Other)));
+            }
+
+            else if (el.tagName().equals("div")) {
+
+                Elements children = el.children();
+
+                TextElements elements = new TextElements();
+                if (!children.isEmpty()) {
+
+                    for (var e : children) {
+
+                        TextElements innerElements = p.getParagraph(e, current, chapterImages, book);
+                        if (innerElements != null) elements.addAll(innerElements);
+
+
+                    }
+
+                } else {
+                    el = el.tagName("p").removeAttr("class");
+//                elements.add( formatText(el, ElementType.Other));
+                    if (p != null) {
+                        TextElements textElements = p.getParagraph(el, current, chapterImages, book);
+
+                        if (textElements != null) elements.addAll(textElements);
+                    }
+                }
+                return elements;
+            } else if (el.tagName().equals("img")) {
+
+                ImageInstance image = ParserHelper.addChapterImage(el);
+
+                current.addChapterImage(image);
+
+                chapterImages.add(image);
+
+                TextElement element = ParserHelper.formatText(el.attr("src", image.getFileName()), ElementType.Image);
+
+                return new TextElements(List.of(element));
+            } else if (el.tagName().equals("p")) {
+                TextElement element = ParserHelper.formatText(el, ElementType.Paragraph);
+                return new TextElements(List.of(element));
+            } else {
+                TextElement element = ParserHelper.formatText(el, ElementType.Other);
+                return new TextElements(List.of(element));
+            }
+        });
+
+
+        return new ParserBuilder()
+                .host("flibusta.su")
+
+//                .books()
+//                .authorBooks()
+//                .matchers("\\/a\\/\\d+")
+//                .deleteElements("a[href^=\"/a/\"]",
+//                        "a[href$=\"/read\"]",
+//                        "a[href$=\"/download\"]",
+//                        "a[href$=\"/epub\"]",
+//                        "a[href$=\"/mobi\"]",
+//                        "a[href$=\"/fb2\"]",
+//                        "a[href$=\"/pdf\"]",
+//                        "a[href$=\"/html\"]",
+//                        "img")
+//                .selector("#main > form > a[href^=\"/b/\"]")
+//                .back()
+//
+//                .seriesBooks()
+//                .matchers("\\/s\\/\\d+")
+//                .selector("#main > a[href^=\"/b/\"]")
+//                .deleteElements("a[href^=\"/a/\"]",
+//                        "a[href$=\"/read\"]",
+//                        "a[href$=\"/download\"]",
+//                        "a[href$=\"/epub\"]",
+//                        "a[href$=\"/mobi\"]",
+//                        "a[href$=\"/fb2\"]",
+//                        "a[href$=\"/pdf\"]",
+//                        "a[href$=\"/html\"]",
+//                        "img")
+//                .back()
+//                .and()
+
+//                .author()
+//                .matcher("\\/a\\/\\d+")
+//                .nameSelector("h1.title")
+//                .biographySelector("div#divabio > p")
+//                .deleteElements("img")
+//                .and()
+//
+//                .series()
+//                .matcher("\\/s\\/\\d+")
+//                .nameSelector("h1.title")
+//                .and()
+
+                .bookImage()
+                .selector(".book_img > img")
+                .and()
+
+                .book()
+                .matchers("\\/book\\/.+")
+                .title(".book_name > h1")
+                .description(".b_biblio_book_annotation")
+                .and()
+
+                .chapters()
+                .links(((bookUrl, main) -> new ArrayList<>(List.of(bookUrl + "/read"))))
+//                .deleteElements("sup, a, form, br, ul, li, form")
+
+                .chapter()
+                .selector("#b-read")
+                .text("section > *")
+                .title("h2, h3, h3.book")
+                .paragraph(paragraph.get())
                 .back()
 
                 .and()
@@ -360,7 +498,7 @@ public class ParserFactory {
                         || i.tagName().equals("p") && i.attr("align").equals("center"))
                 )
                 .deleteElements("br", "sup", "a", "form", "div.navigation", "p[align], div:not([class])[style^=text-align], div#AdsKeeperTop")
-                .switcher(elements -> elements.first().childrenSize() == 1)
+                .switcher(elements -> elements.first() != null && elements.first().childrenSize() == 1)
 
                 .chapter()
                 .selector("body > table > tbody > tr:nth-child(2) > td > table > tbody > tr > td.tb_read_book > div")
@@ -1192,7 +1330,8 @@ public class ParserFactory {
             case "coollib.in", "coollib.xyz", "coollib.net" -> createCoolLibParser();
             case "librebook.me" -> createLibreBookParser();
             case "rulit.me", "www.rulit.me" -> createRulitParser();
-            case "flibusta.site" -> createFlibustaParser();
+            case "flibusta.site" -> createFlibustaSiteParser();
+//            case "flibusta.su" -> createFlibustaSuParser();
             case "militera.lib" -> createMiliteraParser();
             case "4italka.su" -> create4italkaParser();
             case "ancientrome.ru" -> createAncientRome();

@@ -1,26 +1,20 @@
 package com.shadoww.parserservice.util.formatters;
 
-
-//import com.shadoww.BookLibraryApp.model.Author;
-//import com.shadoww.BookLibraryApp.model.Book;
-//import com.shadoww.BookLibraryApp.model.BookSeries;
-//import com.shadoww.BookLibraryApp.model.Chapter;
-//import com.shadoww.BookLibraryApp.model.image.BookImage;
-//import com.shadoww.BookLibraryApp.model.image.ChapterImage;
-//import com.shadoww.api.service.interfaces.*;
-
+import com.shadoww.api.dto.request.AuthorRequest;
 import com.shadoww.api.dto.request.ChapterRequest;
 import com.shadoww.api.dto.request.ImageRequest;
 import com.shadoww.api.dto.request.book.BookFilterRequest;
 import com.shadoww.api.dto.request.book.BookRequest;
+import com.shadoww.api.dto.response.AuthorResponse;
 import com.shadoww.api.dto.response.BookResponse;
 import com.shadoww.api.dto.response.ChapterResponse;
 import com.shadoww.api.dto.response.ImageResponse;
+import com.shadoww.api.exception.ValueAlreadyExistsException;
 import com.shadoww.api.util.texformatters.TextFormatter;
 import com.shadoww.api.util.texformatters.elements.TextElements;
 import com.shadoww.api.util.texformatters.types.ElementType;
-import com.shadoww.parserservice.client.LibraryServiceClient;
-import com.shadoww.parserservice.client.MediaServiceClient;
+import com.shadoww.parserservice.service.RetryableLibraryService;
+import com.shadoww.parserservice.service.RetryableMediaService;
 import com.shadoww.parserservice.util.instances.*;
 import com.shadoww.parserservice.util.parser.factories.ParserFactory;
 import com.shadoww.parserservice.util.parser.parsers.Parser;
@@ -38,16 +32,14 @@ import java.util.*;
 @Component
 public class BooksFormatter {
 
-    private final LibraryServiceClient libraryServiceClient;
-
-    private final MediaServiceClient mediaServiceClient;
+    private final RetryableLibraryService retryableLibraryService;
+    private final RetryableMediaService retryableMediaService;
 
     @Autowired
-    public BooksFormatter(LibraryServiceClient libraryServiceClient, MediaServiceClient mediaServiceClient) {
-        this.libraryServiceClient = libraryServiceClient;
-        this.mediaServiceClient = mediaServiceClient;
+    public BooksFormatter(RetryableLibraryService retryableLibraryService, RetryableMediaService retryableMediaService) {
+        this.retryableLibraryService = retryableLibraryService;
+        this.retryableMediaService = retryableMediaService;
     }
-
 
     public boolean format(String url) {
 
@@ -217,9 +209,15 @@ public class BooksFormatter {
         List<BookInstance> books = new ArrayList<>();
 
         // якщо вже колись був доданий до бібліотеки автор книг(щоб не дублювати дані)
-//        if (existsAuthorByUrl(url)) {
-//            throw new ValueAlreadyExistsException("Автор з таким посиланням вже існує!");
-//        }
+
+        AuthorRequest request = new AuthorRequest();
+        request.setName(parsedAuthor.getName());
+
+        List<AuthorResponse> authors = retryableLibraryService.filterAuthors(request);
+
+        if (!authors.stream().filter(a->a.getName().equals(parsedAuthor.getName())).toList().isEmpty()) {
+            throw new ValueAlreadyExistsException("Такий автор вже існує!");
+        }
 
         List<String> urls = parser.parseBooksByAuthor(url);
 
@@ -230,25 +228,44 @@ public class BooksFormatter {
 
         System.out.println("End parse author books");
 
-//            AuthorInstance author;
 
-//            if (authorService.existsByName(parsedAuthor.getName())) {
-//
-//                author = authorService.readByName(parsedAuthor.getName());
-//                author.addAllBooks(books);
-//            } else {
-//
-//                parsedAuthor.setUploadedUrl(url);
-//                parsedAuthor.addAllBooks(books);
-//
-//                author = authorService.create(parsedAuthor);
-//            }
 
-//            System.out.println(author);
-//            books.forEach(book -> book.addAllAuthors(List.of(author)));
+        Optional<AuthorResponse> foundAuthor = authors.stream().filter(a->a.getName().equals(parsedAuthor.getName())).findFirst();
 
-//            authorService.update(author);
+        AuthorResponse authorResponse;
 
+        AuthorInstance author;
+
+        if (foundAuthor.isPresent()) {
+
+            authorResponse = foundAuthor.get();
+            author = mapToInstance(foundAuthor.get());
+            author.addAllBooks(books);
+        } else {
+
+            parsedAuthor.addAllBooks(books);
+
+            authorResponse = retryableLibraryService.addAuthor(mapToRequest(parsedAuthor));
+            author = mapToInstance(authorResponse);
+        }
+
+        System.out.println(author);
+//        books.forEach(book -> book.addAllAuthors(List.of(author)));
+
+//        retryableLibraryService.updateAuthor(authorResponse.getId(), mapToRequest(author));
+
+        for(var book : books) {
+            BookFilterRequest bookRequest = new BookFilterRequest();
+            bookRequest.setSearchText(book.getTitle());
+            Optional<BookResponse> bookResponse = retryableLibraryService.filterBooks(bookRequest).stream().filter(b->b.getTitle().equals(book.getTitle())).findFirst();
+
+            if (bookResponse.isPresent() && !retryableLibraryService.getAuthorBooks(authorResponse.getId()).stream().anyMatch(b->b.getTitle().equals(book.getTitle()))) {
+                retryableLibraryService.addAuthorToBook(bookResponse.get().getId(), authorResponse.getId());
+                System.out.printf("Author with id - %s added to book with id %s%n", authorResponse.getId(), bookResponse.get().getId());
+            } else {
+                System.out.printf("Book with title - %s%n", book.getTitle());
+            }
+        }
 
         return books;
     }
@@ -303,13 +320,9 @@ public class BooksFormatter {
     public BookInstance parseFullBook(Parser parser, String url) throws IOException {
 
         checkIsParserNull(parser);
-//        if (existsBookByUrl(url)) {
-//            return bookService.getByUrl(url);
-//        }
 
         System.out.println("Start parse book details");
         BookInstance instance = parseBookDetails(parser, url);
-        ImageInstance bookImage = instance.getBookImage();
 
         System.out.println(instance);
         System.out.println("End parse book details");
@@ -320,24 +333,29 @@ public class BooksFormatter {
             request.setSearchText(instance.getTitle());
 
             System.out.println("Start finding same books");
-            List<BookResponse> books = libraryServiceClient.filterBooks(request);
+            List<BookResponse> books = retryableLibraryService.filterBooks(request);
 
             System.out.println(books);
             System.out.println("End finding same books");
-            if(!books.isEmpty()) {
-                return mapToInstance(books.get(0));
+            Optional<BookResponse> foundBook = books.stream().filter(b->b.getTitle().equals(instance.getTitle())).findFirst();
+            if (foundBook.isPresent()) {
+                return mapToInstance(foundBook.get());
             }
 
         }
 
-//        if (existsBookByTitle(book.getTitle())) {
-//            return bookService.getByTitle(book.getTitle());
-//        }
+        ImageInstance bookImage = null;
 
+        if (parser.canParseBookImage()) {
 
-//        book = bookService.create(book);
+            System.out.println("Cover image url:" + url);
 
-        BookResponse bookResponse = libraryServiceClient.addBook(mapToRequest(instance));
+            bookImage = parser.parseBookImage(url);
+
+            instance.setBookImage(bookImage);
+        }
+
+        BookResponse bookResponse = retryableLibraryService.addBook(mapToRequest(instance));
 
         if (bookImage != null) {
 
@@ -345,25 +363,21 @@ public class BooksFormatter {
             ImageRequest imageRequest = mapToRequest(bookImage);
 
             System.out.println("Start adding book image");
-            ImageResponse imageResponse = mediaServiceClient.addBookImage(bookResponse.getId(), imageRequest);
+            ImageResponse imageResponse = retryableMediaService.addBookImage(bookResponse.getId(), imageRequest);
 
-            System.out.println(imageResponse);
+//            System.out.println(imageResponse);
             System.out.println("End adding book image");
 
             BookRequest bookRequest = mapToRequest(mapToInstance(bookResponse));
             bookRequest.setImageId(imageResponse.getId());
 
             System.out.println("Start updating book");
-            System.out.println(libraryServiceClient.updateBook(bookResponse.getId(), bookRequest));
+            retryableLibraryService.updateBook(bookResponse.getId(), bookRequest);
 
             System.out.println("End updating book");
-//            instance.setBookImage(bookImage);
-//            bookImage.setBook(book);
-
-//            imageService.create(bookImage);
         }
 
-        parseBookChapters(parser, instance, bookResponse.getId(), url);
+//        parseBookChapters(parser, instance, bookResponse.getId(), url);
 
         return instance;
     }
@@ -382,14 +396,6 @@ public class BooksFormatter {
             throw new RuntimeException("Сталася помилка при парсингу книги");
         }
 
-        if (parser.canParseBookImage()) {
-
-            System.out.println("Cover image url:" + url);
-
-            book.setBookImage(parser.parseBookImage(url));
-
-        }
-
         return book;
     }
 
@@ -402,50 +408,90 @@ public class BooksFormatter {
 
         System.out.println("Start parse chapters");
         List<ChapterInstance> chapters = parser.parseChapters(url, book);
-
-//        for (var c : chapters) {
-//            System.out.println(c);
-//        }
         System.out.println("End parse chapters");
-//        List<ImageInstance> images = parser.getImages();
 
+        if (chapters == null || chapters.isEmpty()) {
+            return null;
+        }
 
-        if (chapters != null) {
-            book.setAmount(chapters.size());
+        book.setAmount(chapters.size());
 
-            int chapterNumber = 1;
+        List<Long> addedChapters = new ArrayList<>();
+        Map<Long, List<Long>> addedImages = new HashMap<>(); // bookId -> list of image IDs
+        int chapterNumber = 1;
+
+        try {
             for (var chapter : chapters) {
-//                chapter.setBook(book);
-
                 chapter.setChapterNumber(chapterNumber);
 
-//                chapter.setText(TextFormatter.parsePatterns(chapter.getText()).html());
-
+                // Формуємо унікальні імена для зображень
                 List<ImageInstance> chapterImages = chapter.getImages();
-
-                for(var i : chapterImages) {
+                for (var i : chapterImages) {
                     i.setFileName(bookId + "_" + UUID.randomUUID() + ".jpeg");
                 }
 
-                ChapterResponse response = libraryServiceClient.addChapter(bookId, mapToRequest(chapter));
+                // 🔄 Додаємо розділ з повторними спробами
+                ChapterResponse response = retryableLibraryService.addChapter(bookId, mapToRequest(chapter));
+                addedChapters.add(response.getId());
 
+                List<Long> imageIds = new ArrayList<>();
                 for (var i : chapterImages) {
-                    mediaServiceClient.addChapterImage(bookId, response.getId(), mapToRequest(i));
+                    try {
+                        Long imageId = retryableMediaService.addChapterImage(bookId, response.getId(), mapToRequest(i)).getId();
+                        imageIds.add(imageId);
+                    } catch (Exception e) {
+                        System.err.println("❌ Не вдалося додати зображення для розділу: " + response.getId());
+                        rollback(bookId, addedChapters, addedImages);
+                        throw new RuntimeException("🚨 Помилка при додаванні зображення, всі зміни скасовані.");
+                    }
                 }
 
+                addedImages.put(response.getId(), imageIds);
                 chapterNumber++;
             }
 
             return chapters;
+
+        } catch (Exception e) {
+            rollback(bookId, addedChapters, addedImages);
+            throw new RuntimeException("🚨 Помилка при обробці книги, всі зміни скасовані.", e);
+        }
+    }
+
+
+    // 🔄 Rollback у разі помилки
+    private void rollback(long bookId, List<Long> chapterIds, Map<Long, List<Long>> imageIdsMap) {
+        for (Map.Entry<Long, List<Long>> entry : imageIdsMap.entrySet()) {
+            List<Long> imageIds = entry.getValue();
+
+            for (Long imageId : imageIds) {
+                try {
+                    retryableMediaService.deleteImageById(imageId);
+                } catch (Exception e) {
+                    System.err.println("⚠️ Неможливо видалити зображення: " + imageId);
+                }
+            }
         }
 
-        return null;
+        for (Long chapterId : chapterIds) {
+            try {
+                retryableLibraryService.deleteChapter(bookId, chapterId);
+            } catch (Exception e) {
+                System.err.println("⚠️ Неможливо видалити розділ: " + chapterId);
+            }
+        }
+
+        retryableLibraryService.deleteBook(bookId);
+
+
+        System.err.println("🔄 Всі зміни скасовані.");
     }
+
 
     private boolean existBookByTitle(String title) {
         BookFilterRequest request = new BookFilterRequest();
         request.setSearchText(title);
-        return !libraryServiceClient.filterBooks(request).isEmpty();
+        return !retryableLibraryService.filterBooks(request).isEmpty();
     }
 
     private void checkIsParserNull(Parser parser) {
@@ -488,6 +534,16 @@ public class BooksFormatter {
         return request;
     }
 
+    private AuthorRequest mapToRequest(AuthorInstance instance) {
+
+        AuthorRequest request = new AuthorRequest();
+
+        request.setName(instance.getName());
+        request.setBiography(instance.getBiography());
+
+        return request;
+    }
+
     private BookInstance mapToInstance(BookResponse response) {
         BookInstance instance = new BookInstance();
 
@@ -515,6 +571,15 @@ public class BooksFormatter {
         ImageInstance instance = new ImageInstance();
 
         instance.setFileName(response.getFileName());
+
+        return instance;
+    }
+
+    private AuthorInstance mapToInstance(AuthorResponse response) {
+        AuthorInstance instance = new AuthorInstance();
+
+        instance.setName(response.getName());
+        instance.setBiography(response.getBiography());
 
         return instance;
     }

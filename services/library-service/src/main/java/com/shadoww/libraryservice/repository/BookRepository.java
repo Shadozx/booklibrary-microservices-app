@@ -1,6 +1,7 @@
 package com.shadoww.libraryservice.repository;
 
 
+import com.shadoww.libraryservice.model.Author;
 import com.shadoww.libraryservice.model.Book;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,11 +18,7 @@ public interface BookRepository extends JpaRepository<Book, Long> {
     List<Book> findByTitleAllIgnoreCaseOrderByChapters_TextAsc(String title);
 
     Optional<Book> findByTitle(String title);
-//    List<Book> findByAuthors(Author authors);
 //    List<Book> findBySeries(BookSeries series);
-
-//    Optional<Book> findByUploadedUrl(String uploadedUrl);
-
 
 
 //    List<Book> findTop10ByOrderByAddedDesc();
@@ -33,5 +30,7 @@ public interface BookRepository extends JpaRepository<Book, Long> {
 //    boolean existsBookByUploadedUrl(String uploadedUrl);
 
     boolean existsBookByTitle(String title);
+
+    List<Book> findByAuthors(Author author);
 //    List<Book> findFirst1OrderByAdded();
 }

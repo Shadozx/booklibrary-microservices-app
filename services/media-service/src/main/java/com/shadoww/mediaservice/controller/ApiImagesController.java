@@ -152,7 +152,7 @@ public class ApiImagesController {
 
 
     @PreAuthorize("true")
-    @GetMapping("/img/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<?> getImageById(@PathVariable long id) {
         Image image = imageService.readById(id);
 
@@ -160,7 +160,7 @@ public class ApiImagesController {
     }
 
     @PreAuthorize("true")
-    @GetMapping("/{filename}")
+    @GetMapping("/file/{filename}")
     public ResponseEntity<?> getBookImageData(@PathVariable String filename) {
         Image image = imageService.getImageByFilename(filename);
 
@@ -176,4 +176,12 @@ public class ApiImagesController {
 
         return ResponseEntity.ok().build();
     }
+
+
+    @PreAuthorize("true")
+    @GetMapping("/test")
+    public ResponseEntity<?> test() {
+        return ResponseEntity.ok("Test message");
+    }
+
 }

@@ -45,12 +45,6 @@ public class Book {
     private int amount;
 
     /**
-     * Звідки була взята книжка (силка) а якщо пусто то значить власноруч було додано
-     **/
-//    @Column(name = "uploaded_url")
-//    private String uploadedUrl;
-
-    /**
      * Коли була добавлена книжка
      **/
     @Column(name = "created_at", nullable = false)
@@ -66,8 +60,25 @@ public class Book {
      **/
     @OneToMany(mappedBy = "book", orphanRemoval = true, fetch = FetchType.LAZY)
     @Cascade({CascadeType.DELETE, CascadeType.REMOVE})
-    List<Chapter> chapters = new ArrayList<>();
+    private List<Chapter> chapters = new ArrayList<>();
 
+    /**
+     * Автори книжки
+     **/
+    @ManyToMany(
+            cascade = {
+                    jakarta.persistence.CascadeType.DETACH,
+                    jakarta.persistence.CascadeType.MERGE,
+                    jakarta.persistence.CascadeType.PERSIST,
+                    jakarta.persistence.CascadeType.REFRESH
+            }
+    )
+    @JoinTable(
+            name = "book_authors",
+            joinColumns = @JoinColumn(name = "book_id"),
+            inverseJoinColumns = @JoinColumn(name = "author_id")
+    )
+    private List<Author> authors;
 
     public Book(String title, String description/*, String uploadedUrl*/) {
         this.title = title;

@@ -6,6 +6,7 @@ import com.shadoww.api.dto.request.book.BookFilterRequest;
 import com.shadoww.api.exception.NotFoundException;
 import com.shadoww.api.exception.NullEntityReferenceException;
 import com.shadoww.api.exception.ValueAlreadyExistsException;
+import com.shadoww.libraryservice.model.Author;
 import com.shadoww.libraryservice.model.Book;
 import com.shadoww.libraryservice.repository.BookRepository;
 import com.shadoww.libraryservice.service.interfaces.BookService;
@@ -131,6 +132,11 @@ public class BookServiceImpl implements BookService {
                 .filter(book -> filterRequest.getFromYear() == null || book.getCreatedAt().getYear() >= filterRequest.getFromYear())
                 .filter(book -> filterRequest.getToYear() == null || book.getCreatedAt().getYear() <= filterRequest.getToYear())
                 .toList();
+    }
+
+    @Override
+    public List<Book> getAuthorBooks(Author author) {
+        return bookRepository.findByAuthors(author);
     }
 
     @Transactional

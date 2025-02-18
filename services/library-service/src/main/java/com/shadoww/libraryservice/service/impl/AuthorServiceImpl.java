@@ -1,10 +1,12 @@
 package com.shadoww.libraryservice.service.impl;
 
+import com.shadoww.api.dto.request.AuthorRequest;
 import com.shadoww.api.exception.NotFoundException;
 import com.shadoww.api.exception.ValueAlreadyExistsException;
 import com.shadoww.libraryservice.model.Author;
 import com.shadoww.libraryservice.repository.AuthorRepository;
 import com.shadoww.libraryservice.service.interfaces.AuthorService;
+import com.shadoww.libraryservice.service.interfaces.BookService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,13 +20,15 @@ public class AuthorServiceImpl implements AuthorService {
 
     private final AuthorRepository authorRepository;
 
+    private final BookService bookService;
 //    private final Validator validator;
 
     @Autowired
-    public AuthorServiceImpl(AuthorRepository authorRepository) {
+    public AuthorServiceImpl(AuthorRepository authorRepository, BookService bookService) {
         this.authorRepository = authorRepository;
 
 //        validator = Validation.buildDefaultValidatorFactory().getValidator();
+        this.bookService = bookService;
     }
 
     @Override
@@ -59,6 +63,11 @@ public class AuthorServiceImpl implements AuthorService {
     @Override
     public boolean existsByName(String name) {
         return authorRepository.existsByName(name);
+    }
+
+    @Override
+    public List<Author> filterAuthors(AuthorRequest request) {
+        return authorRepository.findByNameContains(request.getName());
     }
 
 //    @Override
@@ -98,6 +107,11 @@ public class AuthorServiceImpl implements AuthorService {
     @Override
     public List<Author> getAll() {
         return authorRepository.findAll();
+    }
+
+    @Override
+    public List<Author> getBookAuthors(Long bookId) {
+        return bookService.readById(bookId).getAuthors();
     }
 
     @Transactional

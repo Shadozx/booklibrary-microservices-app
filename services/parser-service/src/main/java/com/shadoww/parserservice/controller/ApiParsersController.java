@@ -33,6 +33,11 @@ public class ApiParsersController {
         this.booksFormatter = booksFormatter;
     }
 
+    @PreAuthorize("true")
+    @GetMapping("/test")
+    public ResponseEntity<?> test() {
+        return ResponseEntity.ok("Test message");
+    }
 
     @PostMapping("/parse")
     public ResponseEntity<?> parse(@RequestBody ParseLinkRequest request) {
