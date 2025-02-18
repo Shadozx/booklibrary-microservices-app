@@ -14,6 +14,7 @@ import com.shadoww.parserservice.util.parser.selectors.ChapterSelectors;
 import com.shadoww.api.util.texformatters.elements.TextElement;
 import com.shadoww.api.util.texformatters.elements.TextElements;
 import com.shadoww.api.util.texformatters.types.ElementType;
+import com.shadoww.parserservice.util.parser.statistics.ChapterParserStatistics;
 import lombok.Getter;
 import lombok.Setter;
 import org.jsoup.nodes.Document;
@@ -41,11 +42,16 @@ public class ChapterParser {
 
     private String bookUrl;
 
+    @Getter
+    private ChapterParserStatistics statistics;
+
 
     public List<ChapterInstance> parse(String bookUrl, BookInstance book) throws IOException {
 
         this.book = book;
         this.bookUrl = bookUrl;
+
+        statistics = new ChapterParserStatistics();
 
         List<String> links = getLinks(chapterSelectors);
 
@@ -67,6 +73,8 @@ public class ChapterParser {
 
                     if (parsedChapterInstances != null) {
                         chapterInstances.addAll(parsedChapterInstances);
+
+                        statistics.addPageParsed();
                     }
                 }
             }
@@ -78,7 +86,7 @@ public class ChapterParser {
 //            return this.chapters;
         }
 
-        return null;
+        return List.of();
     }
 
 
@@ -172,6 +180,8 @@ public class ChapterParser {
 
 
                 for (Element el : elements) {
+
+                    statistics.addElement(el);
 
                     if (chapterSelector.getTitles().contains(el.tagName() + (!el.className().equals("") ? ("." + el.className()) : ""))) {
 
@@ -362,7 +372,8 @@ public class ChapterParser {
     }
 }
 
-/**
+/*
+ *
  * Парсер:
  * селектор на кількість глав якщо такий є
  * <p>
