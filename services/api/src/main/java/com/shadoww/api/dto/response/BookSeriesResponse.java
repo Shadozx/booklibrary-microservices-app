@@ -12,12 +12,4 @@ public class BookSeriesResponse {
 
     String description;
 
-    String uploadedUrl;
-
-//    public BookSeriesResponse(BookSeries bookSeries) {
-//        this.id = bookSeries.getId();
-//        this.title = bookSeries.getTitle();
-//        this.description = bookSeries.getDescription();
-//        this.uploadedUrl = bookSeries.getUploadedUrl();
-//    }
 }

@@ -7,9 +7,12 @@ import com.shadoww.api.dto.response.AuthorResponse;
 import com.shadoww.api.dto.response.BookResponse;
 import com.shadoww.libraryservice.mapper.AuthorMapper;
 import com.shadoww.libraryservice.mapper.BookMapper;
+import com.shadoww.libraryservice.mapper.BookSeriesMapper;
 import com.shadoww.libraryservice.model.Author;
 import com.shadoww.libraryservice.model.Book;
+import com.shadoww.libraryservice.model.BookSeries;
 import com.shadoww.libraryservice.service.interfaces.AuthorService;
+import com.shadoww.libraryservice.service.interfaces.BookSeriesService;
 import com.shadoww.libraryservice.service.interfaces.BookService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -26,16 +29,20 @@ import java.util.Map;
 public class ApiBooksController {
     private final BookService bookService;
 
+    private final BookSeriesService bookSeriesService;
     private final AuthorService authorService;
     private final BookMapper bookMapper;
+    private final BookSeriesMapper bookSeriesMapper;
     private final AuthorMapper authorMapper;
 
     @Autowired
     public ApiBooksController(
-            BookService bookService, AuthorService authorService, BookMapper bookMapper, AuthorMapper authorMapper) {
+            BookService bookService, BookSeriesService bookSeriesService, AuthorService authorService, BookMapper bookMapper, BookSeriesMapper bookSeriesMapper, AuthorMapper authorMapper) {
         this.bookService = bookService;
+        this.bookSeriesService = bookSeriesService;
         this.authorService = authorService;
         this.bookMapper = bookMapper;
+        this.bookSeriesMapper = bookSeriesMapper;
         this.authorMapper = authorMapper;
     }
 
@@ -192,6 +199,71 @@ public class ApiBooksController {
         }
 
         authors.remove(author);
+
+        bookService.update(book);
+
+        return ResponseEntity
+                .ok()
+                .build();
+    }
+
+    @GetMapping("/{bookId}/bookseries")
+    public ResponseEntity<?> getBookSeriesByBook(@PathVariable long bookId) {
+        return ResponseEntity.ok(bookSeriesService.getBookSeriesByBook(bookId)
+                .stream()
+                .map(bookSeriesMapper::dtoToResponse)
+                .toList()
+        );
+
+
+    }
+
+    // add a bookseries to book
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/{id}/bookseries")
+    public ResponseEntity<Void> addBookSeries(@PathVariable long id,
+                                              @RequestBody Map<String, Long> requestBody) {
+
+        long bookSeriesId = requestBody.get("bookseries_id");
+
+        Book book = bookService.readById(id);
+
+        BookSeries bookSeries = bookSeriesService.readById(bookSeriesId);
+
+        List<BookSeries> series = book.getSeries();
+
+        if (series.contains(bookSeries)) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
+
+        series.add(bookSeries);
+
+        bookService.update(book);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .build();
+    }
+
+    // remove a bookseries from book
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}/bookseries")
+    public ResponseEntity<Void> removeBookSeries(@PathVariable long id,
+                                                 @RequestBody Map<String, Long> requestBody) {
+
+        long bookSeriesId = requestBody.get("bookseries_id");
+
+        Book book = bookService.readById(id);
+
+        BookSeries bookSeries = bookSeriesService.readById(bookSeriesId);
+
+        List<BookSeries> series = book.getSeries();
+
+        if (!series.contains(bookSeries)) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
+
+        series.add(bookSeries);
 
         bookService.update(book);
 

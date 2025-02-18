@@ -80,6 +80,28 @@ public class Book {
     )
     private List<Author> authors;
 
+
+    /**
+     * Серії, до яких належить книжка
+     **/
+    @ManyToMany(
+            fetch = FetchType.LAZY,
+            cascade = {
+                    jakarta.persistence.CascadeType.DETACH,
+                    jakarta.persistence.CascadeType.MERGE,
+                    jakarta.persistence.CascadeType.PERSIST,
+                    jakarta.persistence.CascadeType.REFRESH
+            }
+    )
+    @JoinTable(
+            name = "book_series_books",
+            joinColumns = @JoinColumn(
+                    name = "book_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(
+                    name = "series_id", referencedColumnName = "id")
+    )
+    private List<BookSeries> series;
+
     public Book(String title, String description/*, String uploadedUrl*/) {
         this.title = title;
         this.description = description;

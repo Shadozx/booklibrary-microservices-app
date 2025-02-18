@@ -8,6 +8,7 @@ import com.shadoww.api.exception.NullEntityReferenceException;
 import com.shadoww.api.exception.ValueAlreadyExistsException;
 import com.shadoww.libraryservice.model.Author;
 import com.shadoww.libraryservice.model.Book;
+import com.shadoww.libraryservice.model.BookSeries;
 import com.shadoww.libraryservice.repository.BookRepository;
 import com.shadoww.libraryservice.service.interfaces.BookService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -135,8 +136,13 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
+    public List<Book> getBookSeriesBooks(BookSeries bookSeries) {
+        return bookRepository.findBySeries(List.of(bookSeries));
+    }
+
+    @Override
     public List<Book> getAuthorBooks(Author author) {
-        return bookRepository.findByAuthors(author);
+        return bookRepository.findByAuthors(List.of(author));
     }
 
     @Transactional
