@@ -521,7 +521,7 @@ public class BooksFormatter {
         request.setPatternText(instance.getTextElements().toPatternText());
         request.setChapterNumber(instance.getChapterNumber());
 
-        System.out.println(request);
+//        System.out.println(request);
 
         return request;
     }

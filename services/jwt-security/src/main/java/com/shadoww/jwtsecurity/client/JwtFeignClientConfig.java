@@ -19,10 +19,10 @@ public class JwtFeignClientConfig {
             System.out.println("jwt feign client config work!");
             if (authentication != null && authentication.getCredentials() instanceof String jwtToken) {
 
-                System.out.println(jwtToken);
+//                System.out.println(jwtToken);
                 template.header("Authorization", "Bearer " + jwtToken);
             }
-            System.out.println("Request template in jwt feign client config file:" + template);
+//            System.out.println("Request template in jwt feign client config file:" + template);
         };
     }
 

@@ -18,6 +18,7 @@ public class ChapterParserStatistics {
      * Додає елемент і рекурсивно його дочірні елементи до статистики.
      */
     public void addElement(Element el) {
+        elementsProcessed++;
         addElementRecursive(el);
     }
 
@@ -28,7 +29,7 @@ public class ChapterParserStatistics {
         // Отримуємо рядок-ідентифікатор, який включає інформацію про батька (якщо є) і сам елемент.
         String fullIdentifier = getFullIdentifier(el);
         elementCounts.put(fullIdentifier, elementCounts.getOrDefault(fullIdentifier, 0) + 1);
-        elementsProcessed++;
+
 
         // Рекурсивно обходимо всі дочірні елементи
         for (Element child : el.children()) {

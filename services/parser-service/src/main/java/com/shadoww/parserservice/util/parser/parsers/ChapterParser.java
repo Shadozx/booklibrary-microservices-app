@@ -174,7 +174,7 @@ public class ChapterParser {
 
             if (!elements.isEmpty()) {
 
-                System.out.println(elements.size());
+                System.out.println("Page has elements: " + elements.size());
 
                 Stack<ChapterInstance> chapterInstances = new Stack<>();
 
