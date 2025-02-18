@@ -377,7 +377,7 @@ public class BooksFormatter {
             System.out.println("End updating book");
         }
 
-//        parseBookChapters(parser, instance, bookResponse.getId(), url);
+        parseBookChapters(parser, instance, bookResponse.getId(), url);
 
         return instance;
     }
@@ -409,6 +409,8 @@ public class BooksFormatter {
         System.out.println("Start parse chapters");
         List<ChapterInstance> chapters = parser.parseChapters(url, book);
         System.out.println("End parse chapters");
+
+        System.out.println(parser.getChapterParser().getStatistics());
 
         if (chapters == null || chapters.isEmpty()) {
             return null;
