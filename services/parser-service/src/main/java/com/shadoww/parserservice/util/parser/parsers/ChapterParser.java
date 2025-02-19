@@ -89,6 +89,35 @@ public class ChapterParser {
         return List.of();
     }
 
+    public List<ChapterInstance> parse(Document htmlDocument, BookInstance book) {
+
+        this.book = book;
+        statistics = new ChapterParserStatistics();
+
+        if (htmlDocument == null) {
+            return List.of();
+        }
+
+        Stack<ChapterInstance> chapterInstances = new Stack<>();
+
+        if (chapterSelectors != null) {
+            // Видаляємо непотрібні елементи
+            if (chapterSelectors.getDeleteElements() != null) {
+                htmlDocument.select(String.join(", ", chapterSelectors.getDeleteElements())).remove();
+            }
+
+            Stack<ChapterInstance> parsedChapterInstances = getChapterInstances(chapterSelectors, htmlDocument);
+
+            if (parsedChapterInstances != null) {
+                chapterInstances.addAll(parsedChapterInstances);
+                statistics.addPageParsed();
+            }
+        }
+
+        return addNumber(formatChapters(chapterInstances));
+    }
+
+
 
     /**
      * книжка:

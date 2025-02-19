@@ -1,14 +1,12 @@
 package com.shadoww.parserservice.util.formatters;
 
 import com.shadoww.api.dto.request.AuthorRequest;
+import com.shadoww.api.dto.request.BookSeriesRequest;
 import com.shadoww.api.dto.request.ChapterRequest;
 import com.shadoww.api.dto.request.ImageRequest;
 import com.shadoww.api.dto.request.book.BookFilterRequest;
 import com.shadoww.api.dto.request.book.BookRequest;
-import com.shadoww.api.dto.response.AuthorResponse;
-import com.shadoww.api.dto.response.BookResponse;
-import com.shadoww.api.dto.response.ChapterResponse;
-import com.shadoww.api.dto.response.ImageResponse;
+import com.shadoww.api.dto.response.*;
 import com.shadoww.api.exception.ValueAlreadyExistsException;
 import com.shadoww.api.util.texformatters.TextFormatter;
 import com.shadoww.api.util.texformatters.elements.TextElements;
@@ -259,7 +257,7 @@ public class BooksFormatter {
             bookRequest.setSearchText(book.getTitle());
             Optional<BookResponse> bookResponse = retryableLibraryService.filterBooks(bookRequest).stream().filter(b->b.getTitle().equals(book.getTitle())).findFirst();
 
-            if (bookResponse.isPresent() && !retryableLibraryService.getAuthorBooks(authorResponse.getId()).stream().anyMatch(b->b.getTitle().equals(book.getTitle()))) {
+            if (bookResponse.isPresent() && retryableLibraryService.getAuthorBooks(authorResponse.getId()).stream().noneMatch(b->b.getTitle().equals(book.getTitle()))) {
                 retryableLibraryService.addAuthorToBook(bookResponse.get().getId(), authorResponse.getId());
                 System.out.printf("Author with id - %s added to book with id %s%n", authorResponse.getId(), bookResponse.get().getId());
             } else {
@@ -278,40 +276,70 @@ public class BooksFormatter {
             throw new IllegalArgumentException("Цей парсер не підтримує парсинг серій книг");
         }
 
+        if (!parser.canParseBookSeries(url)) {
+            throw new IllegalArgumentException("Парсер не підтримує парсинг серій книг");
+        }
+
+        System.out.println("Start parse bookseries");
+
+        BookSeriesInstance parsedSeries = parser.parseBookSeries(url);
+
+        System.out.println(parsedSeries);
+
+        System.out.println("End parse bookseries");
+
         List<BookInstance> books = new ArrayList<>();
 
-        // якщо вже колись була додана до бібліотеки серія книг(щоб не дублювати дані)
-//        if (existsBookSeriesByUrl(url)) {
-//            throw new ValueAlreadyExistsException("Серія книг з таким посиланням вже існує!");
-//        }
+        // якщо вже колись був доданий до бібліотеки автор книг(щоб не дублювати дані)
+
+        BookSeriesRequest request = new BookSeriesRequest();
+        request.setTitle(parsedSeries.getTitle());
+
+        List<BookSeriesResponse> series = retryableLibraryService.filterBookSeries(request);
+
+        if (!series.stream().filter(a->a.getTitle().equals(parsedSeries.getTitle())).toList().isEmpty()) {
+            throw new ValueAlreadyExistsException("Така серія книг вже існує!");
+        }
 
         List<String> urls = parser.parseBooksBySeries(url);
 
-        for (var bookUrl : urls) {
-
-            books.add(parseFullBook(parser, bookUrl));
+        System.out.println("Start parse bookseries books");
+        for (var u : urls) {
+            books.add(parseFullBook(parser, u));
         }
 
-        if (parser.canParseBookSeries(url)) {
-            BookSeriesInstance parsedBookSeries = parser.parseBookSeries(url);
+        System.out.println("End parse bookseries books");
 
-//            BookSeries bookSeries;
-//
-//            if (bookSeriesService.existsByTitle(parsedBookSeries.getTitle())) {
-//                bookSeries = bookSeriesService.readByTitle(parsedBookSeries.getTitle());
-//
-//                bookSeries.addAllBooks(books);
-//
-//            } else {
-//                parsedBookSeries.setUploadedUrl(url);
-//                parsedBookSeries.addAllBooks(books);
-//
-//                bookSeries = bookSeriesService.create(parsedBookSeries);
-//            }
+        Optional<BookSeriesResponse> foundSeries = series.stream().filter(a->a.getTitle().equals(parsedSeries.getTitle())).findFirst();
 
-//            books.forEach(book -> book.addAllBookSeries(List.of(bookSeries)));
+        BookSeriesResponse seriesResponse;
 
-//            bookSeriesService.update(bookSeries);
+        BookSeriesInstance bookSeries;
+
+        if (foundSeries.isPresent()) {
+            seriesResponse = foundSeries.get();
+            bookSeries = mapToInstance(foundSeries.get());
+            bookSeries.addAllBooks(books);
+        } else {
+            parsedSeries.addAllBooks(books);
+
+            seriesResponse = retryableLibraryService.addBookSeries(mapToRequest(parsedSeries));
+            bookSeries = mapToInstance(seriesResponse);
+        }
+
+        System.out.println(bookSeries);
+
+        for(var book : books) {
+            BookFilterRequest bookRequest = new BookFilterRequest();
+            bookRequest.setSearchText(book.getTitle());
+            Optional<BookResponse> bookResponse = retryableLibraryService.filterBooks(bookRequest).stream().filter(b->b.getTitle().equals(book.getTitle())).findFirst();
+
+            if (bookResponse.isPresent() && !retryableLibraryService.getBookSeriesBooks(seriesResponse.getId()).stream().anyMatch(b->b.getTitle().equals(book.getTitle()))) {
+                retryableLibraryService.addBookSeriesToBook(bookResponse.get().getId(), seriesResponse.getId());
+                System.out.printf("BookSeries with id - %s added to book with id %s%n", seriesResponse.getId(), bookResponse.get().getId());
+            } else {
+                System.out.printf("Book with title - %s%n", book.getTitle());
+            }
         }
 
         return books;
@@ -546,6 +574,15 @@ public class BooksFormatter {
         return request;
     }
 
+    private BookSeriesRequest mapToRequest(BookSeriesInstance instance) {
+
+        BookSeriesRequest request = new BookSeriesRequest();
+
+        request.setTitle(instance.getTitle());
+
+        return request;
+    }
+
     private BookInstance mapToInstance(BookResponse response) {
         BookInstance instance = new BookInstance();
 
@@ -582,6 +619,15 @@ public class BooksFormatter {
 
         instance.setName(response.getName());
         instance.setBiography(response.getBiography());
+
+        return instance;
+    }
+
+    private BookSeriesInstance mapToInstance(BookSeriesResponse response) {
+        BookSeriesInstance instance = new BookSeriesInstance();
+
+        instance.setTitle(response.getTitle());
+
 
         return instance;
     }

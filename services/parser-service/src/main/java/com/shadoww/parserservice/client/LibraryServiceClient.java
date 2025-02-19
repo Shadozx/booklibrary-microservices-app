@@ -1,11 +1,13 @@
 package com.shadoww.parserservice.client;
 
 import com.shadoww.api.dto.request.AuthorRequest;
+import com.shadoww.api.dto.request.BookSeriesRequest;
 import com.shadoww.api.dto.request.ChapterRequest;
 import com.shadoww.api.dto.request.book.BookFilterRequest;
 import com.shadoww.api.dto.request.book.BookRequest;
 import com.shadoww.api.dto.response.AuthorResponse;
 import com.shadoww.api.dto.response.BookResponse;
+import com.shadoww.api.dto.response.BookSeriesResponse;
 import com.shadoww.api.dto.response.ChapterResponse;
 import com.shadoww.jwtsecurity.client.JwtFeignClientConfig;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -52,4 +54,22 @@ public interface LibraryServiceClient {
 
     @GetMapping("/api/authors/{authorId}/books")
     List<BookResponse> getAuthorBooks(@PathVariable long authorId);
+
+    @PostMapping("/api/bookseries")
+    BookSeriesResponse createBookSeries(@RequestBody BookSeriesRequest request);
+
+    @PutMapping("/api/bookseries/{id}")
+    BookSeriesResponse updateBookSeries(@PathVariable long id, @RequestBody BookSeriesRequest request);
+
+    @DeleteMapping("/api/bookseries/{id}")
+    void deleteBookSeries(@PathVariable long id, @RequestBody BookSeriesRequest request);
+
+    @PostMapping("/api/books/{id}/bookserise")
+    void addBookSeriesToBook(@PathVariable long id, @RequestBody Map<String, Long> requestBody);
+
+    @PostMapping("/api/bookseries/filter")
+    List<BookSeriesResponse> filterBookSeries(@RequestBody BookSeriesRequest request);
+
+    @GetMapping("/api/bookseries/{seriesId}/books")
+    List<BookResponse> getBookSeriesBooks(@PathVariable long seriesId);
 }
