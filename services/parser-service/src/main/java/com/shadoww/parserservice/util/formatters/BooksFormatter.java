@@ -26,6 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 public class BooksFormatter {
@@ -86,7 +87,7 @@ public class BooksFormatter {
         return books;
     }
 
-    private ByteArrayOutputStream parseToFb2(BookInstance bookInstance, List<ChapterInstance> chapters) throws ParserConfigurationException {
+    public ByteArrayOutputStream parseToFb2(BookInstance bookInstance, List<ChapterInstance> chapters) throws ParserConfigurationException {
 
         BookFB2Writer writer = new BookFB2Writer();
 
@@ -172,6 +173,10 @@ public class BooksFormatter {
         if (parser.canParseBook(url)) {
             BookInstance bookInstance = parseBookDetails(parser, url);
 
+            if (parser.canParseBookImage()) {
+                bookInstance.setBookImage(parser.parseBookImage(url));
+            }
+
             List<ChapterInstance> chapters = parser.parseChapters(url, bookInstance);
 
             return parseToFb2(bookInstance, chapters);
@@ -180,6 +185,150 @@ public class BooksFormatter {
 
         } else {
             throw new IllegalArgumentException("Цей парсер нічого не підтримує");
+        }
+
+    }
+
+    public ByteArrayOutputStream parseMultipleBooksToFb2Combined(List<String> urls)
+            throws IOException, ParserConfigurationException {
+
+        List<BookInstance> books = new ArrayList<>();
+
+        // Обробляємо кожен URL лише один раз
+        for (String url : urls) {
+
+            URL u = new URL(url);
+            Parser parser = ParserFactory.createParserForHost(u.getHost());
+            if (!parser.canParseBook(url)) {
+                System.out.println("Пропускаємо URL (не підтримується парсинг книги): " + url);
+                continue;
+            }
+            // Парсимо базові дані книги (назва, опис)
+            BookInstance bookInstance = parseBookDetails(parser, url);
+            if (parser.canParseBookImage()) {
+                bookInstance.setBookImage(parser.parseBookImage(url));
+            }
+            // Отримуємо розділи книги та зберігаємо їх у полі chapters
+            List<ChapterInstance> chapters = parser.parseChapters(url, bookInstance);
+            bookInstance.setChapters(chapters);
+
+            System.out.println("Title:" + bookInstance.getTitle());
+            System.out.println(parser.getChapterParser().getStatistics());
+
+            books.add(bookInstance);
+        }
+
+        // Ініціалізуємо FB2 writer
+        BookFB2Writer writer = new BookFB2Writer();
+
+        String annotation = "Цей файл містить декілька книг, зібраних в один fb2 файл.";
+        // Додаємо до анотації опис кожної книги
+        annotation += "\n" + books.stream()
+                .map(BookInstance::getDescription)
+                .collect(Collectors.joining("\n"));
+        System.out.println("Annotation: " + annotation);
+        // Загальний опис для комбінованого файлу
+        BookFB2Writer.DescriptionBuilder.TitleInfoBuilder titleInfo = writer.description().titleInfo();
+        // Генеруємо title із назв книг у потрібному форматі
+        titleInfo.title(generateTitleInfo(books));
+        titleInfo.annotation(annotation);
+
+        Optional<ImageInstance> fb2BookCover = books.stream().map(BookInstance::getBookImage).filter(Objects::nonNull).findFirst();
+
+        if (fb2BookCover.isPresent()) {
+            titleInfo.coverImage(fb2BookCover.get().getData());
+        }
+
+        titleInfo.back().back();
+        writer.description().back();
+
+        // Отримуємо головний блок для всіх книг
+        var body = writer.body();
+
+        // Перший блок: індекс книг із назвами та описами
+        var indexSection = body.section();
+        indexSection.title("Індекс книг");
+        for (BookInstance book : books) {
+            indexSection.paragraph(book.getTitle());
+            if (book.getBookImage() != null) {
+                indexSection.image(book.getBookImage().getFileName(), book.getBookImage().getData());
+            }
+            indexSection.paragraph(book.getDescription());
+            indexSection.paragraph("---------------------------------");
+        }
+        body = indexSection.and();
+
+        // Другий блок: детальний вміст кожної книги
+        for (BookInstance book : books) {
+            var bookSection = body.section();
+//             Додаємо назву книги
+            bookSection.title(book.getTitle());
+            // Додаємо опис книги, якщо він є
+
+            if (book.getBookImage() != null) {
+                bookSection.image(book.getBookImage().getFileName() + 1, book.getBookImage().getData());
+            }
+
+            if (book.getDescription() != null && !book.getDescription().isEmpty()) {
+                bookSection.paragraph(book.getDescription());
+            }
+
+            body = bookSection.and();
+
+            List<ChapterInstance> chapters = book.getChapters();
+            if (chapters != null) {
+                formatFb2Chapters(body, chapters);
+            }
+        }
+
+        body.back();
+
+        return writer.build();
+    }
+
+    private String generateTitleInfo(Collection<BookInstance> books) {
+        return "Колекція книг: " + books.stream()
+                .map(BookInstance::getTitle)
+                .collect(Collectors.joining(" | "));
+    }
+
+    private void formatFb2Chapters(BookFB2Writer.BodyBuilder body, List<ChapterInstance> chapters) throws ParserConfigurationException {
+        for (var chapter : chapters) {
+
+            var section = body.section();
+
+            if (!chapter.isTitleEmpty()) {
+                section.title(chapter.getTitle());
+            }
+
+            if (!chapter.isTextEmpty()) {
+
+                List<ImageInstance> images = chapter.getImages();
+
+                TextElements elements = chapter.getTextElements();
+
+                for (var element : elements) {
+
+//                    System.out.println(element);
+                    if (element.hasType(ElementType.Paragraph)) {
+
+                        section.paragraph(element.attr("text"));
+                    } else if (element.hasType(ElementType.Image)) {
+
+
+                        Optional<ImageInstance> foundImage = images.stream().filter(i -> i.getFileName().equals(element.attr("filename"))).findFirst();
+
+                        if (foundImage.isPresent()) {
+                            ImageInstance image = foundImage.get();
+                            section.image(image.getFileName(), image.getData());
+                        }
+                    } else if (element.hasType(ElementType.Other)) {
+                        section.paragraph(element.attr("text"));
+                    }
+                }
+            }
+
+            body = section.and();
         }
 
     }
@@ -213,7 +362,7 @@ public class BooksFormatter {
 
         List<AuthorResponse> authors = retryableLibraryService.filterAuthors(request);
 
-        if (!authors.stream().filter(a->a.getName().equals(parsedAuthor.getName())).toList().isEmpty()) {
+        if (!authors.stream().filter(a -> a.getName().equals(parsedAuthor.getName())).toList().isEmpty()) {
             throw new ValueAlreadyExistsException("Такий автор вже існує!");
         }
 
@@ -227,8 +376,7 @@ public class BooksFormatter {
         System.out.println("End parse author books");
 
 
-
-        Optional<AuthorResponse> foundAuthor = authors.stream().filter(a->a.getName().equals(parsedAuthor.getName())).findFirst();
+        Optional<AuthorResponse> foundAuthor = authors.stream().filter(a -> a.getName().equals(parsedAuthor.getName())).findFirst();
 
         AuthorResponse authorResponse;
 
@@ -252,12 +400,12 @@ public class BooksFormatter {
 
 //        retryableLibraryService.updateAuthor(authorResponse.getId(), mapToRequest(author));
 
-        for(var book : books) {
+        for (var book : books) {
             BookFilterRequest bookRequest = new BookFilterRequest();
             bookRequest.setSearchText(book.getTitle());
-            Optional<BookResponse> bookResponse = retryableLibraryService.filterBooks(bookRequest).stream().filter(b->b.getTitle().equals(book.getTitle())).findFirst();
+            Optional<BookResponse> bookResponse = retryableLibraryService.filterBooks(bookRequest).stream().filter(b -> b.getTitle().equals(book.getTitle())).findFirst();
 
-            if (bookResponse.isPresent() && retryableLibraryService.getAuthorBooks(authorResponse.getId()).stream().noneMatch(b->b.getTitle().equals(book.getTitle()))) {
+            if (bookResponse.isPresent() && retryableLibraryService.getAuthorBooks(authorResponse.getId()).stream().noneMatch(b -> b.getTitle().equals(book.getTitle()))) {
                 retryableLibraryService.addAuthorToBook(bookResponse.get().getId(), authorResponse.getId());
                 System.out.printf("Author with id - %s added to book with id %s%n", authorResponse.getId(), bookResponse.get().getId());
             } else {
@@ -297,7 +445,7 @@ public class BooksFormatter {
 
         List<BookSeriesResponse> series = retryableLibraryService.filterBookSeries(request);
 
-        if (!series.stream().filter(a->a.getTitle().equals(parsedSeries.getTitle())).toList().isEmpty()) {
+        if (!series.stream().filter(a -> a.getTitle().equals(parsedSeries.getTitle())).toList().isEmpty()) {
             throw new ValueAlreadyExistsException("Така серія книг вже існує!");
         }
 
@@ -310,7 +458,7 @@ public class BooksFormatter {
 
         System.out.println("End parse bookseries books");
 
-        Optional<BookSeriesResponse> foundSeries = series.stream().filter(a->a.getTitle().equals(parsedSeries.getTitle())).findFirst();
+        Optional<BookSeriesResponse> foundSeries = series.stream().filter(a -> a.getTitle().equals(parsedSeries.getTitle())).findFirst();
 
         BookSeriesResponse seriesResponse;
 
@@ -329,12 +477,12 @@ public class BooksFormatter {
 
         System.out.println(bookSeries);
 
-        for(var book : books) {
+        for (var book : books) {
             BookFilterRequest bookRequest = new BookFilterRequest();
             bookRequest.setSearchText(book.getTitle());
-            Optional<BookResponse> bookResponse = retryableLibraryService.filterBooks(bookRequest).stream().filter(b->b.getTitle().equals(book.getTitle())).findFirst();
+            Optional<BookResponse> bookResponse = retryableLibraryService.filterBooks(bookRequest).stream().filter(b -> b.getTitle().equals(book.getTitle())).findFirst();
 
-            if (bookResponse.isPresent() && !retryableLibraryService.getBookSeriesBooks(seriesResponse.getId()).stream().anyMatch(b->b.getTitle().equals(book.getTitle()))) {
+            if (bookResponse.isPresent() && !retryableLibraryService.getBookSeriesBooks(seriesResponse.getId()).stream().anyMatch(b -> b.getTitle().equals(book.getTitle()))) {
                 retryableLibraryService.addBookSeriesToBook(bookResponse.get().getId(), seriesResponse.getId());
                 System.out.printf("BookSeries with id - %s added to book with id %s%n", seriesResponse.getId(), bookResponse.get().getId());
             } else {
@@ -365,7 +513,7 @@ public class BooksFormatter {
 
             System.out.println(books);
             System.out.println("End finding same books");
-            Optional<BookResponse> foundBook = books.stream().filter(b->b.getTitle().equals(instance.getTitle())).findFirst();
+            Optional<BookResponse> foundBook = books.stream().filter(b -> b.getTitle().equals(instance.getTitle())).findFirst();
             if (foundBook.isPresent()) {
                 return mapToInstance(foundBook.get());
             }
