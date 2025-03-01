@@ -62,6 +62,11 @@ public class ChapterParserStatistics {
             List<String> classes = new ArrayList<>(el.classNames());
             Collections.sort(classes); // Для стабільності порядку
             identifier += "." + String.join(".", classes);
+
+
+        }
+        if (el.hasAttr("src")) {
+            identifier += "[src=" + el.attr("src") + "]";
         }
         return identifier;
     }

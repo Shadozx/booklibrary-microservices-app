@@ -27,9 +27,9 @@ public class ChapterSelectorBuilder {
         return this;
     }
 
-    public ChapterSelectorBuilder title(String title) {
+    public ChapterSelectorBuilder title(String... titles) {
 
-        chapterSelector.addTitle(title);
+        chapterSelector.addTitles(titles);
 
 
         return this;

@@ -187,7 +187,7 @@ public class ParserFactory {
                 .chapter()
                 .selector("#main")
                 .text(".book, .poem, center img, p img")
-                .title("h2, h3, h3.book")
+                .title("h2", "h3", "h3.book")
                 .textConvector((chapterInstances, el) -> {
                     ChapterInstance prev = !chapterInstances.isEmpty() ? chapterInstances.pop() : new ChapterInstance();
                     if (el.text().matches("\\d+")) {

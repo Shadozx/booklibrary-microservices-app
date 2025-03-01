@@ -61,7 +61,10 @@ public class ParserHelper {
 
         image.setContentType("image/jpeg");
 
-        image.setData(response.bodyAsBytes());
+        byte[] data = response.bodyAsBytes();
+
+//        image.setData(response.bodyAsBytes());
+        image.setData(data);
 
         return image;
     }
@@ -77,8 +80,10 @@ public class ParserHelper {
 
     public static ImageInstance addChapterImage(Element el) {
         try {
+//            String src = "https://flibusta.site" + el.attr("src");
             String src = el.absUrl("src");
 
+            System.out.println(src);
             if (src.startsWith("http")) {
 
 
@@ -123,71 +128,3 @@ public class ParserHelper {
     }
 
 }
-
-
-/**
- * paragraph.set((el, current, chapterImages, book) -> {
- * Paragraph p = paragraph.get();
- * if (el.tagName().equals("p") && el.hasClass("strong")) {
- * <p>
- * if (!el.children().isEmpty()) {
- * return new TextElements(List.of(ParserHelper.formatText(el, ElementType.Paragraph)));
- * } else {
- * Element element = el.tagName("b").removeAttr("class");
- * <p>
- * TextElement e = ParserHelper.formatText(element, ElementType.Other);
- * if (e != null) return new TextElements(List.of(e));
- * <p>
- * }
- * }
- * <p>
- * if (el.tagName().equals("div")) {
- * <p>
- * Elements children = el.children();
- * <p>
- * TextElements elements = new TextElements();
- * if (!children.isEmpty()) {
- * <p>
- * for (var e : children) {
- * <p>
- * TextElements innerElements = p.getParagraph(e, current, chapterImages, book);
- * if (innerElements != null) elements.addAll(innerElements);
- * <p>
- * <p>
- * }
- * <p>
- * } else {
- * el = el.tagName("p").removeAttr("class");
- * //                elements.add( formatText(el, ElementType.Other));
- * if (p != null) {
- * TextElements textElements = p.getParagraph(el, current, chapterImages, book);
- * <p>
- * if (textElements != null) elements.addAll(textElements);
- * }
- * }
- * return elements;
- * } else if (el.tagName().equals("img")) {
- * <p>
- * ImageInstance image = ParserHelper.addChapterImage(el, book);
- * <p>
- * if (image != null) {
- * <p>
- * current.addChapterImage(image);
- * <p>
- * chapterImages.add(image);
- * <p>
- * TextElement element = ParserHelper.formatText(el.attr("src", image.getFileName()), ElementType.Image);
- * <p>
- * if (element != null) return new TextElements(List.of(element));
- * }
- * } else if (el.tagName().equals("p")) {
- * TextElement element = ParserHelper.formatText(el, ElementType.Paragraph);
- * if (element != null) return new TextElements(List.of(element));
- * } else {
- * TextElement element = ParserHelper.formatText(el, ElementType.Other);
- * if (element != null) return new TextElements(List.of(element));
- * }
- * <p>
- * return null;
- * });
- */

@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Setter
@@ -35,10 +36,10 @@ public class ChapterSelector {
     private FilterElements filterElements;
 
 
-    public void addTitle(String title) {
+    public void addTitles(String... titles) {
         if (this.titles == null) this.titles = new ArrayList<>();
 
-        this.titles.add(title);
+        this.titles.addAll(Arrays.asList(titles));
     }
 }
 
