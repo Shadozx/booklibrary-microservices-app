@@ -16,7 +16,6 @@ import com.shadoww.parserservice.service.RetryableMediaService;
 import com.shadoww.parserservice.util.instances.*;
 import com.shadoww.parserservice.util.parser.factories.ParserFactory;
 import com.shadoww.parserservice.util.parser.parsers.Parser;
-//import org.springframework.beans.factory.annotation.Autowired;
 import com.shadoww.parserservice.util.writers.BookFB2Writer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -26,6 +25,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -331,6 +331,69 @@ public class BooksFormatter {
             body = section.and();
         }
 
+    }
+
+    public List<BookInstance> parseBooks(List<String> urls) {
+        System.out.println("Available processors for parsing books: " + Runtime.getRuntime().availableProcessors());
+        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+
+        List<Callable<BookInstance>> tasks = urls.stream().map(u-> (Callable<BookInstance>)() -> parseBook(u)).toList();
+
+        List<BookInstance> results = new ArrayList<>();
+
+        try {
+            List<Future<BookInstance>> futures = executor.invokeAll(tasks);
+
+            for (Future<BookInstance> future : futures) {
+                try {
+                    BookInstance book = future.get();
+                    results.add(book); // Додаємо тільки успішний результат
+                } catch (ExecutionException e) {
+                    System.err.println("Помилка під час обробки книги: " + e.getCause());
+                    // Зупиняємо всі інші задачі
+                    futures.forEach(f -> f.cancel(true));
+                    break; // Вихід з циклу при помилці
+                }
+            }
+        } catch (InterruptedException e) {
+            System.err.println("Обробку перервано");
+            Thread.currentThread().interrupt();
+        } finally {
+            executor.shutdownNow(); // Завершення потоків
+        }
+
+//        for(var u : urls) {
+//            try {
+//                results.add(parseBook(u));
+//            } catch (IOException e) {
+//                throw new RuntimeException(e);
+//            }
+//        }
+
+        return results;
+
+    }
+
+    private BookInstance parseBook(String url) throws IOException {
+        URL u = new URL(url);
+        Parser parser = ParserFactory.createParserForHost(u.getHost());
+        if (!parser.canParseBook(url)) {
+            System.out.println("Пропускаємо URL (не підтримується парсинг книги): " + url);
+            throw new RuntimeException("Парсер не підтримує парсинг книг");
+        }
+        // Парсимо базові дані книги (назва, опис)
+        BookInstance bookInstance = parseBookDetails(parser, url);
+        if (parser.canParseBookImage()) {
+            bookInstance.setBookImage(parser.parseBookImage(url));
+        }
+        // Отримуємо розділи книги та зберігаємо їх у полі chapters
+        List<ChapterInstance> chapters = parser.parseParallelChapters(url, bookInstance);
+        bookInstance.setChapters(chapters);
+
+        System.out.println("Title:" + bookInstance.getTitle());
+        System.out.println(parser.getChapterParser().getStatistics());
+
+        return bookInstance;
     }
 
     public List<BookInstance> parseAuthorBooks(Parser parser, String url) throws IOException {

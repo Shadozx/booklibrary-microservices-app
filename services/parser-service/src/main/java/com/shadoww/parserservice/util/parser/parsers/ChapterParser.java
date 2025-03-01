@@ -1,8 +1,5 @@
 package com.shadoww.parserservice.util.parser.parsers;
 
-//import com.shadoww.BookLibraryApp.model.Book;
-//import com.shadoww.BookLibraryApp.model.Chapter;
-//import com.shadoww.BookLibraryApp.model.image.ChapterImage;
 
 import com.shadoww.api.util.texformatters.TextFormatter;
 import com.shadoww.parserservice.util.instances.BookInstance;
@@ -25,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 public class ChapterParser {
@@ -80,15 +78,28 @@ public class ChapterParser {
             }
 
             return addNumber(formatChapters(chapterInstances));
-
-//            this.chapters = addNumber(formatChapters.stream().filter(c->!c.isTextEmpty()).map(Cha::new).toList());
-
-//            return this.chapters;
         }
 
         return List.of();
     }
 
+    public List<ChapterInstance> parseParallel(String bookUrl, BookInstance book) throws IOException {
+        this.book = book;
+        this.bookUrl = bookUrl;
+
+        statistics = new ChapterParserStatistics();
+
+        List<String> links = getLinks(chapterSelectors);
+
+        if (links != null && !links.isEmpty()) {
+
+            Stack<ChapterInstance> chapterInstances = getAllChapterInstancesParallel(links);
+
+            return addNumber(formatChapters(chapterInstances));
+        }
+
+        return List.of();
+    }
     public List<ChapterInstance> parse(Document htmlDocument, BookInstance book) {
 
         this.book = book;
@@ -117,7 +128,69 @@ public class ChapterParser {
         return addNumber(formatChapters(chapterInstances));
     }
 
+    private Stack<ChapterInstance> getAllChapterInstancesParallel(List<String> links) throws IOException {
 
+        System.out.println("Available processors for getting all chapter instances: " + Runtime.getRuntime().availableProcessors());
+        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+
+        List<Callable<Stack<ChapterInstance>>> tasks = links.stream().map(u-> (Callable<Stack<ChapterInstance>>)() -> {
+            Document page = ParserHelper.getDocument(u);
+
+            if (chapterSelectors.getDeleteElements() != null) {
+                page.select(String.join(", ", chapterSelectors.getDeleteElements())).remove();
+            }
+
+            System.out.println("Parsed link: " + u);
+            Stack<ChapterInstance> parsedChaptersInstances = getChapterInstances(chapterSelectors, page);
+
+            if (parsedChaptersInstances == null) {
+                throw new RuntimeException("Parsing chapter instances were failed!");
+            }
+
+            statistics.addPageParsed();
+
+            return parsedChaptersInstances;
+        }).toList();
+
+        Stack<ChapterInstance> results = new Stack<>();
+
+        int pagesProcessedCount = 0;
+
+        try {
+            List<Future<Stack<ChapterInstance>>> futures = executorService.invokeAll(tasks);
+
+            try {
+
+                for (Future<Stack<ChapterInstance>> future : futures) {
+                    Stack<ChapterInstance> chapterInstances = future.get();
+
+                    if (chapterInstances != null) {
+                        results.addAll(chapterInstances);
+                        pagesProcessedCount++;
+                    }
+                }
+            }catch (RuntimeException | ExecutionException e) {
+                System.out.println("Stopped processing chapter instances");
+
+
+                futures.forEach(f->f.cancel(true));
+            }
+
+        } catch (InterruptedException e) {
+            System.out.println("Stop processing parsing chapter instances!");
+
+            Thread.currentThread().interrupt();
+        }finally {
+            executorService.shutdownNow();
+        }
+
+        if (links.size() != pagesProcessedCount) {
+            throw new RuntimeException("Chapter link size is not equal to processed pages size");
+        }
+
+
+        return results;
+    }
 
     /**
      * книжка:
@@ -231,10 +304,6 @@ public class ChapterParser {
 
                             if (textElements != null) current.addAllTextElements(textElements);
 
-//                            if (el.tagName().equals("table")) {
-//                                System.out.println(el);
-//                            }
-
                             chapterInstances.push(current);
                         } else {
 //                            System.out.println("Paragraph is empty...");
@@ -297,10 +366,7 @@ public class ChapterParser {
             prev.addTitle(el.text());
 
             chapterInstances.push(prev);
-        }
-
-
-        else if (prev.getTitle().equals("Примечания") || prev.getTitle().equals("Примітки") || el.text().matches("\\d+")) {
+        } else if (prev.getTitle().equals("Примечания") || prev.getTitle().equals("Примітки") || el.text().matches("\\d+")) {
 
             prev.addTextElement(ParserHelper.formatText(el, ElementType.Paragraph));
 
@@ -339,10 +405,6 @@ public class ChapterParser {
             return new TextElements(List.of(element));
         } else {
 
-//            if (el.tagName().equals("div") && el.className().equals("poem")) {
-//                System.out.println(el);
-//            }
-
             TextElement element = ParserHelper.formatText(el.text(el.text()), ElementType.Paragraph);
 
 
@@ -376,15 +438,13 @@ public class ChapterParser {
 
                     prev.addChapterInstance(current);
                     stack.push(prev);
-                } else if(current.isTextEmpty()) {
+                } else if (current.isTextEmpty()) {
                     ChapterInstance prev = !stack.isEmpty() ? stack.pop() : new ChapterInstance();
 
                     prev.addTextElement(TextFormatter.parseToPattern(new Element("b").text(current.getTitle()), ElementType.Other));
 
                     stack.push(prev);
-                }
-
-                else stack.push(current);
+                } else stack.push(current);
             }
         }
 

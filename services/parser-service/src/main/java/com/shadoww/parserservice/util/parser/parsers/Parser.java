@@ -140,6 +140,25 @@ public class Parser {
         return chapters;
     }
 
+    public List<ChapterInstance> parseParallelChapters(String url, BookInstance book) throws IOException {
+
+        if (chapterParser == null) {
+            throw new IllegalArgumentException("Немає здатності парсити розділи книги");
+        }
+
+        if (book == null) {
+            throw new IllegalArgumentException("Книга не може бути пустою!");
+        }
+
+
+        chapters = chapterParser.parseParallel(url, book);
+
+        images = chapterParser.getChapterImages();
+
+
+        return chapters;
+    }
+
     public List<String> parseBooksByAuthor(String authorUrl) throws IOException {
         if (authorParser == null) {
             throw new IllegalArgumentException("Силка на серію книг не може бути пустою!");

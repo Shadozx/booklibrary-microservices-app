@@ -22,6 +22,7 @@ import java.io.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
+import java.util.List;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -56,6 +57,19 @@ public class BooksFormatterParseFb2Tests {
 //        writeBookInstance("test-book-%s.fb2".formatted(currentDate), booksFormatter.parseToFb2(url));
         writeBookInstance("osobisti_kordoni.fb2", booksFormatter.parseToFb2(url));
 //        booksFormatter.parseToFb2(url);
+    }
+
+    @Test
+    public void testParseFb2Books() throws IOException, ParserConfigurationException {
+        List<String> urls = List.of(
+                "http://flibusta.site/b/114549",
+                "http://flibusta.site/b/121911",
+                "http://flibusta.site/b/120337"
+        );
+
+        String currentDate = getCurrentDateString();
+
+        writeBookInstance("test-books-%s.fb2".formatted(currentDate), booksFormatter.parseMultipleBooksToFb2Combined(urls));
     }
 
     @Test
@@ -120,8 +134,6 @@ public class BooksFormatterParseFb2Tests {
     }
 
 
-
-
     @Test
     public void testJsoupXml() throws IOException {
 //        String filename = "";
@@ -138,7 +150,6 @@ public class BooksFormatterParseFb2Tests {
         Document doc = Jsoup.parse("", Parser.xmlParser());
 
         Element element = doc.createElement("FictionBook");
-
 
 
         doc.appendChild(element);
